@@ -99,6 +99,7 @@ async def _check_probe_statuses(session: AsyncSession):
             offline_duration_after = ps.duration()
             if offline_duration_before < offline_for <= offline_duration_after:
                 await ps.awaitable_attrs.probe
+                await ps.probe.awaitable_attrs.token
                 notification.append(ps.probe.to_dict())
 
         session.add(ps)
