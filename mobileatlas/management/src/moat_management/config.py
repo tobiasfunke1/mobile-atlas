@@ -10,7 +10,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any, TypeVar
 
-from redis.asyncio.client import Redis
+import redis.asyncio as redis
 from sqlalchemy import URL
 
 LOGGER = logging.getLogger(__name__)
@@ -71,13 +71,12 @@ class Config:
             database=self.DB_NAME,
         )
 
-    def redis_client(self) -> Redis:
-        if (c := getattr(self, "_redis_client", None)) is not None:
-            return c
+    def redis_client(self) -> redis.Redis:
+        if (pool := getattr(self, "_redis_pool", None)) is None:
+            pool = redis.ConnectionPool(host=self.REDIS_HOST, port=self.REDIS_PORT)
+            object.__setattr__(self, "_redis_pool", pool)
 
-        client = Redis(host=self.REDIS_HOST, port=self.REDIS_PORT)
-        object.__setattr__(self, "_redis_client", client)
-        return client
+        return redis.Redis(connection_pool=pool)
 
     def doc_settings(self) -> dict[str, Any]:
         if self.SERVER_DOCUMENTATION:

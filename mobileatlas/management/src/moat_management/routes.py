@@ -267,7 +267,7 @@ async def change_country(
 
     try:
         country = pycountry.countries.search_fuzzy(args.country)[0]
-    except:
+    except IndexError:
         return "found no matching country", 404
 
     p.country = country.alpha_2  # type: ignore
@@ -290,13 +290,14 @@ async def execute_probe(probe_id: UUID, command: ProbeCommand, session: Session)
     if p is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    await get_config().redis_client().publish(f"probe:{probe_id}", command.value)
+    async with get_config().redis_client() as redis:
+        await redis.publish(f"probe:{probe_id}", command.value)
 
 
 def format_country(country):
     try:
         country = pycountry.countries.get(alpha_2=country)
-    except:
+    except Exception:
         return "n/a"
 
     if country is None:

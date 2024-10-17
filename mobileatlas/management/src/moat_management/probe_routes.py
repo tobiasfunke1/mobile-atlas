@@ -110,16 +110,19 @@ async def probe_poll(
     await session.commit()
 
     # Connect to redis queue and wait for command
-    pubsub = config.get_config().redis_client().pubsub(ignore_subscribe_messages=True)
-    await pubsub.subscribe(f"probe:{probe_id}")
+    async with config.get_config().redis_client() as redis, redis.pubsub(
+        ignore_subscribe_messages=True
+    ) as pubsub:
+        await pubsub.subscribe(f"probe:{probe_id}")
 
-    try:
-        msg = await asyncio.wait_for(
-            anext(pubsub.listen()), get_config().LONG_POLLING_INTERVAL.total_seconds()
-        )
-        return pyd.Command(command=msg["data"].decode())
-    except TimeoutError:
-        pass
+        try:
+            msg = await asyncio.wait_for(
+                anext(pubsub.listen()),
+                get_config().LONG_POLLING_INTERVAL.total_seconds(),
+            )
+            return pyd.Command(command=msg["data"].decode())
+        except TimeoutError:
+            pass
 
 
 @router.post("/system_information")
