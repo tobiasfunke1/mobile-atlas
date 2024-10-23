@@ -83,7 +83,7 @@ async def _check_probe_statuses(session: AsyncSession):
     notification = []
 
     for ps in online_statuses:
-        if ps.status == ProbeStatusType.online and ps.end + interval < now:
+        if ps.status == ProbeStatusType.online and ps.end + interval * 2 < now:
             ps.active = False
             ps_offline = ProbeStatus(
                 probe_id=ps.probe_id,
