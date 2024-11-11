@@ -1,0 +1,8 @@
+[Unit]
+Description=MobileAtlas probe update handler
+After=default.target
+
+[Service]
+Type=oneshot
+ExecStart=probe-update --switch-autoboot
+RemainAfterExit=yes

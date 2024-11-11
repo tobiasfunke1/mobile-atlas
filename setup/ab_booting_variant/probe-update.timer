@@ -1,0 +1,8 @@
+[Unit]
+Description=MobileAtlas probe update timer
+
+[Timer]
+OnBootSec=1h
+
+[Install]
+WantedBy=default.target

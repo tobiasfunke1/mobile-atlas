@@ -1,0 +1,310 @@
+#!/usr/bin/bash
+
+set -eu
+
+if [[ "${DEBUG:-0}" -eq 1 ]]; then
+  set -x
+fi
+
+if [[ "$EUID" -ne 0 ]]; then
+  echo "$(basename "$0") must be run as root."
+  exit 1
+fi
+
+usage() {
+  echo "Usage: $0 --switch-autoboot | -f <update-archive>"
+  exit 1
+}
+
+error() {
+  echo -e 'Error:' "$@" >&2
+  exit 1
+}
+
+check_partioning() {
+  local partitions
+  partitions="$(lsblk /dev/mmcblk0 -no kname | sed -n '/^mmcblk0p[1-6]$/p' | wc -l)"
+  if ! [[ "$partitions" -eq 6 ]]; then
+    error "Partioning scheme different than expected."
+  fi
+}
+
+find_root_part() {
+  local root_dev
+  root_dev="$(findmnt / -no source)"
+
+  if ! [[ "$root_dev" =~ ^/dev/mmcblk0p([56])$ ]]; then
+    error "expected root partition source to be /dev/mmcblk0p[56]. Found: $root_dev"
+  fi
+
+  local root_part="${BASH_REMATCH[1]}"
+  local boot_dev
+  boot_dev="$(findmnt /boot/firmware -no source)"
+
+  if [[ ("$root_part" -eq 5) && ("$boot_dev" != /dev/mmcblk0p2) ]]; then
+    error "expected boot partition to be on /dev/mmcblk0p2. Was: $boot_dev"
+  elif [[ ("$root_part" -eq 6) && ("$boot_dev" != /dev/mmcblk0p3) ]]; then
+    error "expected boot partition to be on /dev/mmcblk0p3. Was: $boot_dev"
+  fi
+
+  echo "$root_part"
+}
+
+write_boot_part() {
+  if [[ $# -ne 2 ]]; then
+    exit 2
+  fi
+
+  if ! [[ ("$2" -eq 2) || ("$2" -eq 3) ]]; then
+    error "Refusing to write boot partition image to partition that is not 2 or 3. ($2)"
+  fi
+
+  echo -n "Writing image to new boot partition: " >&2
+  tar xvJOf "$1" boot.img | dd of="/dev/mmcblk0p$2" bs=4M conv=fsync oflag=direct iflag=fullblock status=progress
+}
+
+write_root_part() {
+  if [[ $# -ne 2 ]]; then
+    exit 2
+  fi
+
+  if ! [[ ("$2" -eq 5) || ("$2" -eq 6) ]]; then
+    error "Refusing to write boot partition image to partition that is not 5 or 6. ($2)"
+  fi
+
+  echo -n "Writing image to new root partition: " >&2
+  tar xvJOf "$1" root.img | dd of="/dev/mmcblk0p$2" bs=4M conv=fsync oflag=direct iflag=fullblock status=progress
+}
+
+mount_autoboot() {
+  AUTOBOOT_DIR="$TMP_DIR/autoboot_part"
+  mkdir -p "$AUTOBOOT_DIR"
+  local ro=,ro
+  [[ "${1:-}" == "rw" ]] && ro=
+
+  if findmnt "$AUTOBOOT_DIR" >/dev/null; then
+    umount "$AUTOBOOT_DIR"
+  fi
+
+  mount -o nodev,noexec,nosuid$ro /dev/mmcblk0p1 "$AUTOBOOT_DIR"
+}
+
+check_autoboot() {
+  if sha512sum --status -c - <<<"5a1aba6022af0204114862213d13bac44dc1c40754970309da5721ebf6b924332c25048a6547134ff1887069727c0dc793550242909506fa40ed581d2f95864f  ${AUTOBOOT_DIR}/autoboot.txt" ||
+    sha512sum --status -c - <<<"cbfae21b6fb923782e2093c0b6785376c772cb3c24d411a9aa8ce478e07832986a4cb5c658c9fd964ce316ef51160c6276860d0cb4cae6e4af6a61b00aa9860e  ${AUTOBOOT_DIR}/autoboot.txt"; then
+    return
+  fi
+  error "Unexpected format of autoboot.txt file."
+}
+
+cat_proc_bootloader() {
+  od -tu4 -An --endian=big "/proc/device-tree/chosen/bootloader/$1" | tr -d ' '
+}
+
+is_tryboot() {
+  local tryboot
+  tryboot=$(cat_proc_bootloader 'tryboot')
+  if [[ "$tryboot" -eq 1 ]]; then
+    return 0
+  elif [[ "$tryboot" -eq 0 ]]; then
+    return 1
+  fi
+
+  error "Failed to determine tryboot status. Quitting..."
+}
+
+extract_part() {
+  sed -En 's/^\/dev\/mmcblk0p([0-9])$/\1/p'
+}
+
+check_chosen_part() {
+  local chosen_part
+  chosen_part=$(cat_proc_bootloader 'partition')
+  local ab_part
+  ab_part=$(autoboot-update "$AUTOBOOT_DIR/autoboot.txt" 2>/dev/null | cut -f1)
+  local mount_part
+  mount_part=$(findmnt /boot/firmware -no source | extract_part)
+  local root_part
+  root_part=$(findmnt / -no source | extract_part)
+
+  if [[ ("$chosen_part" -eq "$ab_part") && ("$ab_part" -eq "$mount_part") ]]; then
+    if [[ ("$chosen_part" -eq 2) && ("$root_part" -eq 5) ]]; then
+      return 0
+    elif [[ ("$chosen_part" -eq 3) && ("$root_part" -eq 6) ]]; then
+      return 0
+    fi
+  fi
+
+  error "Couldn't determine whether this was a default boot."
+}
+
+check_tryboot_part() {
+  local chosen_part
+  chosen_part=$(cat_proc_bootloader 'partition')
+  local ab_part
+  ab_part=$(autoboot-update "$AUTOBOOT_DIR/autoboot.txt" 2>/dev/null | cut -f2)
+  local mount_part
+  mount_part=$(findmnt /boot/firmware -no source | extract_part)
+  local root_part
+  root_part=$(findmnt / -no source | extract_part)
+
+  if [[ ("$chosen_part" -eq "$ab_part") && ("$ab_part" -eq "$mount_part") ]]; then
+    if [[ ("$chosen_part" -eq 2) && ("$root_part" -eq 5) ]]; then
+      return 0
+    elif [[ ("$chosen_part" -eq 3) && ("$root_part" -eq 6) ]]; then
+      return 0
+    fi
+  fi
+
+  error "Couldn't determine whether this was a tryboot boot.\n(chosen: $chosen_part; ab_part: $ab_part; mount_part: $mount_part; root_part: $root_part)"
+}
+
+update_partuuids() {
+  local boot_ptuuid
+  boot_ptuuid="$(lsblk -no partuuid "$1")"
+  local root_ptuuid
+  root_ptuuid="$(lsblk -no partuuid "$2")"
+  local subst_pat="PARTUUID=[[:alnum:]-]+"
+  sed -Ei "s/root=$subst_pat/root=PARTUUID=$root_ptuuid/" "$NEW_BOOT_DIR/cmdline.txt"
+  sed -Ei "\\|$subst_pat +/boot/firmware +|s/$subst_pat/PARTUUID=$boot_ptuuid/; \\|$subst_pat +/ +|s/$subst_pat/PARTUUID=$root_ptuuid/" "$NEW_ROOT_DIR/etc/fstab"
+
+  if grep -qv "root=PARTUUID=$root_ptuuid" "$NEW_BOOT_DIR/cmdline.txt"; then
+    error "Failed to update PARTUUID in cmdline.txt"
+  fi
+
+  if sed -E '/^(#|proc )/d' "$NEW_ROOT_DIR/etc/fstab" | grep -qEv "^PARTUUID=($boot_ptuuid|$root_ptuuid) +"; then
+    error "Failed to update PARTUUIDs in /etc/fstab (fstab differs from expected content)"
+  fi
+}
+
+copy_config() {
+  echo -n "Copying configuration to new image..."
+
+  cp /etc/mobileatlas/token "$NEW_ROOT_DIR/etc/mobileatlas/"
+  cp /etc/wireguard/* "$NEW_ROOT_DIR/etc/wireguard/"
+  cp /etc/machine-id "$NEW_ROOT_DIR/etc/"
+  cp /etc/ssh/ssh_host_* "$NEW_ROOT_DIR/etc/ssh/"
+
+  local ssh_dir
+  ssh_dir="$NEW_ROOT_DIR/home/pi/.ssh/"
+  mkdir -p "$ssh_dir"
+  chmod 700 "$ssh_dir"
+  cp /home/pi/.ssh/authorized_keys "$ssh_dir"
+
+  local pi_pw
+  pi_pw=$(grep -E '^pi:' /etc/shadow | cut -d: -f2)
+  sed -Ei "/^pi:/s!^([^:]+:)[^:]+(:.*)\$!\1$pi_pw\2!" "$NEW_ROOT_DIR/etc/shadow"
+
+  echo " Done"
+}
+
+config_checks() {
+  if grep -qEv "panic=[[:digit:]]" "$NEW_BOOT_DIR/cmdline.txt"; then
+    error "cmdline.txt does not set the panic parameter"
+  fi
+}
+
+prepare_update() {
+  if is_tryboot; then
+    error "Tryboot is active. Refusing to start update."
+  fi
+
+  mount_autoboot
+
+  check_chosen_part
+  local boot_part
+  boot_part="$(cat_proc_bootloader 'partition')"
+
+  if ! autoboot-update --check "$AUTOBOOT_DIR/autoboot.txt" >/dev/null 2>&1; then
+    error "autoboot.txt has an unexpected format."
+  fi
+
+  case "$boot_part" in
+  2)
+    local new_boot_part=3
+    local new_root_part=6
+    ;;
+  3)
+    local new_boot_part=3
+    local new_root_part=6
+    ;;
+  *)
+    error "Unknown boot partion number."
+    ;;
+  esac
+
+  write_root_part "$UPDATE_ARCHIVE" "$new_root_part"
+  write_boot_part "$UPDATE_ARCHIVE" "$new_boot_part"
+
+  NEW_BOOT_DIR="$TMP_DIR/new_boot_dir"
+  mkdir "$NEW_BOOT_DIR"
+  mount -o nodev,noexec,nosuid "/dev/mmcblk0p$new_boot_part" "$NEW_BOOT_DIR"
+
+  NEW_ROOT_DIR="$TMP_DIR/new_root_dir"
+  mkdir "$NEW_ROOT_DIR"
+  mount -o nodev,noexec,nosuid "/dev/mmcblk0p$new_root_part" "$NEW_ROOT_DIR"
+
+  update_partuuids "/dev/mmcblk0p$new_boot_part" "/dev/mmcblk0p$new_root_part"
+  copy_config
+  config_checks
+}
+
+try_switch() {
+  if ! is_tryboot; then
+    echo "Tryboot inactive. Not changing autoboot config."
+    exit 0
+  fi
+
+  mount_autoboot
+
+  check_tryboot_part
+
+  mount_autoboot rw
+  autoboot-update --switch "$AUTOBOOT_DIR/autoboot.txt"
+}
+
+umount_if_exists() {
+  if [[ -n "${1:-}" ]]; then
+    umount "$1"
+    rmdir "$1"
+  fi
+}
+
+cleanup() {
+  set +e
+
+  umount_if_exists "${AUTOBOOT_DIR:-}"
+  umount_if_exists "${NEW_BOOT_DIR:-}"
+  umount_if_exists "${NEW_ROOT_DIR:-}"
+
+  if [[ -n "${TMP_DIR:-}" ]]; then
+    rmdir "$TMP_DIR"
+  fi
+}
+
+TMP_DIR=$(mktemp -d)
+trap cleanup EXIT
+check_partioning
+
+if [[ ($# -eq 1) && ("$1" == "--switch-autoboot") ]]; then
+  try_switch
+  exit 0
+fi
+
+while getopts ":f:" opt; do
+  case "$opt" in
+  f)
+    UPDATE_ARCHIVE="${OPTARG}"
+    ;;
+  *)
+    usage
+    ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [[ ($# -ne 0) || (-z "${UPDATE_ARCHIVE:-}") ]]; then
+  usage
+fi
+
+prepare_update

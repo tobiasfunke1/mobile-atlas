@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+
+import shutil
+import sys
+from pathlib import Path
+import argparse
+import hashlib
+from dataclasses import dataclass
+from configparser import ConfigParser
+
+HASHES = [
+    "5a1aba6022af0204114862213d13bac44dc1c40754970309da5721ebf6b924332c25048a6547134ff1887069727c0dc793550242909506fa40ed581d2f95864f",
+    "cbfae21b6fb923782e2093c0b6785376c772cb3c24d411a9aa8ce478e07832986a4cb5c658c9fd964ce316ef51160c6276860d0cb4cae6e4af6a61b00aa9860e",
+]
+
+
+@dataclass
+class Autoboot:
+    enabled: bool
+    all: int
+    tryboot: int
+
+    def switch(self):
+        self.all, self.tryboot = self.tryboot, self.all
+
+    def __str__(self):
+        if self.enabled:
+            return (
+                f"A/B booting enabled. Booting from partition {self.all}. "
+                f"(Tryboot from partition {self.tryboot})"
+            )
+        else:
+            return "!!! A/B booting disabled !!!"
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--switch",
+        action="store_true",
+        help="switch boot and tryboot partitions",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="check whether autoboot.txt has the expected format",
+    )
+    parser.add_argument(
+        "file",
+        type=Path,
+        help="autoboot.txt file to update",
+    )
+    return parser.parse_args()
+
+
+def check_autoboot_hash(file: Path):
+    with open(file, "rb") as f:
+        hash = hashlib.file_digest(f, "sha512").hexdigest()
+
+    if hash in HASHES:
+        return
+
+    print("Unknown autoboot.txt file format. Aborting...")
+    sys.exit(1)
+
+
+def switch(file: Path, ab: Autoboot):
+    check_autoboot_hash(file)
+
+    ab.switch()
+
+    switched = file.with_suffix(".switched")
+    write_autoboot(ab, switched)
+
+    check_autoboot_hash(switched)
+    shutil.move(switched, file)
+
+
+def main():
+    args = parse_args()
+    ab = read_autoboot(args.file)
+
+    if args.check:
+        check_autoboot_hash(args.file)
+
+    if args.switch:
+        print(f"Updating {args.file}...", file=sys.stderr)
+        print(f"OLD: {ab}", file=sys.stderr)
+        switch(args.file, ab)
+        print(f"NEW: {ab}", file=sys.stderr)
+        return
+
+    print(f"Current config: {ab}", file=sys.stderr)
+    print(f"{ab.all}\t{ab.tryboot}")
+
+
+def read_autoboot(path: Path) -> Autoboot:
+    config = ConfigParser()
+    config.read(path)
+
+    return Autoboot(
+        config.getboolean("all", "tryboot_a_b"),
+        config.getint("all", "boot_partition"),
+        config.getint("tryboot", "boot_partition"),
+    )
+
+
+def write_autoboot(ab: Autoboot, path: Path):
+    with open(path, "x") as f:
+        f.write(
+            "[all]\n"
+            f"tryboot_a_b={int(ab.enabled)}\n"
+            f"boot_partition={ab.all}\n"
+            "[tryboot]\n"
+            f"boot_partition={ab.tryboot}\n"
+        )
+
+
+if __name__ == "__main__":
+    main()
