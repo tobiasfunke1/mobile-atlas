@@ -10,13 +10,19 @@ import pycountry
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import contains_eager, selectinload
 
 from . import pydantic_models as pyd
 from .auth import get_basic_auth_admin
 from .config import get_config
 from .db import get_db
-from .models import MamToken, Probe, ProbeStatus, ProbeStatusType
+from .models import (
+    Probe,
+    ProbeServiceStartupLog,
+    ProbeStatus,
+    ProbeStatusType,
+    ProbeSystemInformation,
+)
 from .resources import get_templates
 
 LOGGER = logging.getLogger(__name__)
@@ -45,15 +51,53 @@ async def probes(
     Show all probes
     """
     await session.begin()
-    load_attrs = [Probe.status, Probe.system_info, Probe.startup_log]
+    status_subq = (
+        select(ProbeStatus.id)
+        .where(ProbeStatus.probe_id == Probe.id)
+        .order_by(ProbeStatus.active.desc(), ProbeStatus.begin.desc())
+        .limit(1)
+        .scalar_subquery()
+        .correlate(Probe)
+    )
+    system_info_subq = (
+        select(ProbeSystemInformation.id)
+        .where(ProbeSystemInformation.probe_id == Probe.id)
+        .order_by(ProbeSystemInformation.timestamp.desc())
+        .limit(1)
+        .scalar_subquery()
+        .correlate(Probe)
+    )
+    start_log_subq = (
+        select(ProbeServiceStartupLog.id)
+        .where(ProbeServiceStartupLog.probe_id == Probe.id)
+        .order_by(ProbeServiceStartupLog.timestamp.desc())
+        .limit(1)
+        .scalar_subquery()
+        .correlate(Probe)
+    )
     all_probes = (
-        await session.scalars(
-            select(Probe).options(
-                selectinload(Probe.token).selectinload(MamToken.logs),
-                *map(selectinload, load_attrs),
+        (
+            await session.scalars(
+                select(Probe)
+                .outerjoin(ProbeStatus, ProbeStatus.id == status_subq)
+                .outerjoin(
+                    ProbeSystemInformation,
+                    ProbeSystemInformation.id == system_info_subq,
+                )
+                .outerjoin(
+                    ProbeServiceStartupLog, ProbeServiceStartupLog.id == start_log_subq
+                )
+                .options(
+                    selectinload(Probe.token),
+                    contains_eager(Probe.status),
+                    contains_eager(Probe.system_info),
+                    contains_eager(Probe.startup_log),
+                )
             )
         )
-    ).all()
+        .unique()
+        .all()
+    )
 
     ctx = {
         "probes": all_probes,

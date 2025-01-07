@@ -1,10 +1,11 @@
 [build-system]
-requires = [ "setuptools" ]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "moat-management"
-dynamic = [ "version", "dependencies" ]
+dynamic = ["version", "dependencies"]
+requires-python = ">= 3.12"
 
 [project.scripts]
 moat-management = "moat_management.cli:main"
@@ -13,4 +14,4 @@ moat-management = "moat_management.cli:main"
 attr = "moat_management.VERSION"
 
 [tool.setuptools.dynamic.dependencies]
-file = [ "requirements.txt" ]
+file = ["requirements.txt"]

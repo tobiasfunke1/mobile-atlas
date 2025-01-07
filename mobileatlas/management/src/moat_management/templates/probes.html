@@ -29,7 +29,7 @@
                 {{'🟢 online ' if p.status[0].status.name == "online" else '🟥 offline '}}
                 {{p.status[0].duration()|format_timedelta}}
               {%else%}
-                🚧 {{p.time_since_activation()}}
+                🚧 {#{p.time_since_activation()}#}
               {%endif%}
             </td>
             <td class="center">{%if p.system_info%}<span class="timestamp">{{p.system_info[0].timestamp}}</span>{%else%}n/a{%endif%}</td>
