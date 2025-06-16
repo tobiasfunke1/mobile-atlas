@@ -61,7 +61,7 @@
 
   - name: Adapt config
     blockinfile:
-      path: /boot/config.txt
+      path: /boot/firmware/config.txt
       block: |
         #disable wifi
         dtoverlay=disable-wifi
