@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+set -eu
+
+usage() {
+  cat >&2 <<END
+Usage: $0 [-s <on/off/toggle>] [-r]
+  -s  Change power LED setting
+  -r  Reboot after changing setting
+END
+  exit 1
+}
+
+log() {
+  echo "$1" >&2
+}
+
+while getopts "rs:" o; do
+  case "$o" in
+    r)
+      reboot=1
+      ;;
+    s)
+      set_led="$OPTARG"
+      ;;
+    *)
+      usage
+      ;;
+  esac
+done
+shift "$((OPTIND-1))"
+
+if [[ $# -ne 0 ]]; then
+  usage
+fi
+
+config_file='/boot/firmware/config.txt'
+setting='dtparam=pwr_led_activelow'
+
+test_led_status() {
+  grep -q "^${setting}=$1\$" "$config_file"
+}
+
+get_led_status() {
+  if test_led_status '.*'; then
+    sed -n "s/^${setting}=\(.*\)$/\1/p" "$config_file"
+  else
+    echo on
+  fi
+}
+
+enable_led() {
+  if test_led_status off; then
+    log "Toggling LED to 'on'"
+    sed -i "/^${setting}=off\$/s/=off\$/=on/" "$config_file"
+  else
+    reboot=0
+  fi
+}
+
+disable_led() {
+  if test_led_status on; then
+    log "Toggling LED to 'off'"
+    sed -i "/^${setting}=on\$/s/=on\$/=off/" "$config_file"
+  else
+    reboot=0
+  fi
+}
+
+ensure_led_param() {
+  if ! test_led_status '.*'; then
+    log "Adding explicit dtparam with default configuration..."
+    sed -i "\$a\\${setting}=on" "$config_file"
+  fi
+}
+
+toggle() {
+  if test_led_status on; then
+    disable_led
+  elif test_led_status off; then
+    enable_led
+  else
+    log "Failed to set power led dtparam."
+    reboot=0
+    exit 2
+  fi
+}
+
+if [[ -v set_led ]]; then
+  if [[ "$EUID" -ne 0 ]]; then
+    log "Must be run as root."
+    exit 1
+  fi
+
+  ensure_led_param
+  case "$set_led" in
+    toggle)
+      toggle
+      ;;
+    on)
+      enable_led
+      ;;
+    off)
+      disable_led
+      ;;
+    *)
+      usage
+      ;;
+  esac
+
+  if [[ "${reboot:-0}" -eq 1 ]]; then
+    log "Rebooting in 1 minute..."
+    shutdown --reboot +2
+  fi
+else
+  log "Current LED status: $(get_led_status)"
+fi

@@ -78,6 +78,14 @@ def handle_command(command):
     elif command == "git_pull":
         # Execute a git pull
         subprocess.check_output(["git", "-C", GIT_DIR, "pull"])
+    elif command == "reboot":
+        subprocess.check_output(["shutdown", "--reboot", "+2"])
+    elif command == "led:on":
+        # Enable power led and reboot on change
+        subprocess.check_output(["pwr_led", "-s", "on", "-r"])
+    elif command == "led:off":
+        # Disable power led and reboot on change
+        subprocess.check_output(["pwr_led", "-s", "off", "-r"])
     else:
         print(f"Got unrecognized command {command}")
 
@@ -141,7 +149,7 @@ state = {
 
 if __name__ == "__main__":
     print("MobileAtlas service startup")
-    while 1:
+    while True:
         try:
             main()
         except Exception as e:
