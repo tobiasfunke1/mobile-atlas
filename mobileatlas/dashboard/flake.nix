@@ -10,9 +10,24 @@
     }:
     let
       pyproject = builtins.fromTOML (builtins.readFile ./pyproject.toml);
-      reqName =
-        req:
-        builtins.elemAt (builtins.match "^([A-Za-z0-9][A-Za-z0-9._-]*[A-Za-z0-9]|[A-Za-z0-9]).*$" req) 0;
+      py-deps =
+        p: with p; [
+          authlib
+          fastapi
+          httpx
+          itsdangerous
+          jinja2
+          psycopg
+          psycopg-pool
+          pycountry
+          pydantic-extra-types
+          pydantic-settings
+          pyjwt
+          python-multipart
+          redis
+          uvicorn
+          websockets
+        ];
     in
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -31,7 +46,37 @@
             src = ./.;
 
             build-system = [ py-pkgs.setuptools ];
-            propagatedBuildInputs = map (d: py-pkgs.${reqName d}) pyproject.project.dependencies;
+            propagatedBuildInputs = py-deps py-pkgs;
+          };
+
+          dashboard-image = pkgs.dockerTools.streamLayeredImage {
+            name = "moat-dashboard";
+            tag = "latest";
+
+            contents = [
+              (python.withPackages (p: [
+                self.packages.${system}.default
+                p.gunicorn
+              ]))
+              pkgs.dockerTools.binSh
+              pkgs.coreutils
+            ];
+
+            config = {
+              WorkingDir = "/app";
+              Entrypoint = [
+                "gunicorn"
+                "-k"
+                "uvicorn.workers.UvicornWorker"
+                "-b"
+                "[::]:8000"
+                "moat_dashboard.routes:app"
+              ];
+              Env = [ "PYTHONUNBUFFERED=1" ];
+              ExposedPorts = {
+                "8000" = { };
+              };
+            };
           };
         };
 
@@ -52,9 +97,9 @@
                   [
                     editablePkg
                     p.pytest
-                    p.uvicorn
+                    p.gunicorn
                   ]
-                  ++ map (d: p.${reqName d}) pyproject.project.dependencies
+                  ++ py-deps p
                 ))
 
                 pkgs.black
@@ -68,12 +113,38 @@
             };
         };
 
-        apps = {
-          default = {
-            type = "app";
-            program = "${self.packages.${system}.default}/bin/moat-dashboard";
+        apps =
+          let
+            freeze-nix-deps = pkgs.stdenv.mkDerivation {
+              pname = "freeze-nix-deps";
+              version = "0.0.1";
+
+              phases = [ "buildPhase" ];
+
+              buildInputs = [
+                (python.withPackages (p: (py-deps p) ++ [ p.pip ]))
+              ];
+
+              buildPhase = ''
+                echo '#!/bin/bash' >"$out"
+                echo 'cat <<END' >>"$out"
+                python -m pip --no-cache-dir freeze >>"$out"
+                echo 'END' >>"$out"
+
+                chmod 755 "$out"
+              '';
+            };
+          in
+          {
+            default = {
+              type = "app";
+              program = "${self.packages.${system}.default}/bin/moat-dashboard";
+            };
+            freeze = {
+              type = "app";
+              program = "${freeze-nix-deps}";
+            };
           };
-        };
       }
     );
 }
