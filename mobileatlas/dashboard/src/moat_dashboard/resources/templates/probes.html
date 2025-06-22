@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% from "icons.html" import icon with context %}
+{% block main %}
+{% macro page_url(page) %}
+{{ url_for('probes') ~ '?page_size=' ~ params.page_size ~ '&page=' ~ page ~ ('&country=' ~ '&country='.join(params.country) if params.country else '') }}
+{% endmacro %}
+<article>
+  <header>
+    <h1>Probes</h1>
+  </header>
+  <details>
+    <summary role="button" class="outline">Filter Options</summary>
+    <form method="get">
+      <label>
+        Country filter:
+        <select multiple name="country">
+          {% for c in available_countries %}
+          <option value="{{c}}" {%if c in params.country %}selected{%endif%}>{{ pycountries.get(alpha_2=c).name }} ({{ c }})</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Status filter:
+        <select multiple name="status">
+          <option value="online" {%if 'online' in params.status %}selected{%endif%}>Online</option>
+          <option value="offline" {%if 'offline' in params.status %}selected{%endif%}>Offline</option>
+          <option value="unknown" {%if 'unknown' in params.status %}selected{%endif%}>Unknown</option>
+        </select>
+      </label>
+      <label>
+        Number of Probes per Page:
+        <input type="number" name="page_size" value="{{ params.page_size }}" min="1" max="500">
+      </label>
+      <fieldset>
+        <label>
+          Sort by:
+          <select name="order_by">
+            <option value="id" {%if params.order_by == 'id'%}selected{%endif%}>Probe Id</option>
+            <option value="country" {%if params.order_by == 'country'%}selected{%endif%}>Country</option>
+            <option value="status" {%if params.order_by == 'status'%}selected{%endif%}>Status</option>
+          </select>
+        </label>
+        <label>
+          Sorting direction:
+          <select name="order_dir">
+            <option value="asc" {%if params.order_dir == 'asc'%}selected{%endif%}>Ascending</option>
+            <option value="desc" {%if params.order_dir == 'desc'%}selected{%endif%}>Descending</option>
+          </select>
+        </label>
+      </fieldset>
+      <input type="hidden" name="page" value="{{ params.page }}">
+      {% if params.hosted %}
+      <input type="hidden" name="hosted" value="{{ params.hosted }}">
+      {% endif %}
+      <input type="submit" value="Apply">
+    </form>
+  </details>
+  <div class="overflow-auto">
+  <table class="stripped">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Country</th>
+        <th scope="col">Status</th>
+        <th scope="col" style="text-align: right;">Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for probe in probes %}
+        <tr>
+          <th scope="row">{{ probe.name or probe.id }}</th>
+          <td>{{ probe.country|default('—',true) }}</td>
+          <td>{{ probe.status }}</td>
+          <td style="text-align: right;"><a href="{{ url_for('probe_details', probe_id = probe.id) }}">{{ icon('arrow-up-right-from-square', 'Link to probe details') }}</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4" class="no-data">&lt;no results&gt;</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <footer class="pagination-box">
+    {% set last_page = (probes_total / params.page_size) | round(0, 'ceil') | int %}
+    <a role="button" href="{{ page_url(params.page - 1) }}" {% if params.page == 1 %}disabled{% endif %}>Prev</a>
+    <p class="page-progress">
+    {% if params.page != 1 %}
+      <a href="{{ page_url(1) }}">1</a>
+      …
+    {% endif %}
+      {{ params.page }}
+    {% if params.page < last_page %}
+      …
+      <a href="{{ page_url(last_page) }}">{{ last_page }}</a>
+    {% endif %}
+    </p>
+    <a role="button" href="{{ page_url(params.page + 1) }}" {% if params.page == last_page %}disabled{% endif %}>Next</a>
+  </footer>
+</article>
+{% endblock %}

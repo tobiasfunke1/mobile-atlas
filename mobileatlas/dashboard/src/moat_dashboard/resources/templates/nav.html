@@ -1,0 +1,30 @@
+<nav>
+  <ul>
+    <li>
+      <a aria-label="MobileAtlas Dashboard Home" href="/">
+        <img
+          class="logo"
+          src="{{ url_for('static', path='/img/mobile-atlas-logo.svg') }}"
+          alt="MobileAtlas Logo"
+        />
+      </a>
+    </li>
+    <li><a href="{{ url_for('probes') }}">Probes</a></li>
+  </ul>
+  <ul>
+    <!--<li><a href="dashboard.html">Dashboard</a></li>-->
+    {% if user %}
+    <li>
+      <a href="{{ url_for('probes') ~ '?hosted=True' }}">My Probes</a>
+    </li>
+    <li>
+      <a href="{{ oidc_realm_url }}/account">Profile</a>
+    </li>
+    <li>
+      <a href="{{ url_for('logout') }}">Logout</a>
+    </li>
+    {% else %}
+    <li><a href="{{ url_for('login') }}">Login</a></li>
+    {% endif %}
+  </ul>
+</nav>

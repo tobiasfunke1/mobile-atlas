@@ -1,0 +1,113 @@
+{% from "icons.html" import icon with context %}
+{% extends "base.html" %} {% block stylesheets %}
+<link
+  href="{{ url_for('static', path='/css/probe_details.css') }}"
+  rel="stylesheet"
+/>
+<noscript>
+  <link href="{{ url_for('static', path='/css/nojs.css') }}" rel="stylesheet" />
+</noscript>
+{% endblock %}
+{% block scripts %}
+{% if full_info %}
+<script src="{{ url_for('static', path='/js/chart.js') }}"></script>
+<script src="{{ url_for('static', path='/js/luxon.js') }}"></script>
+<script src="{{ url_for('static', path='/js/chartjs-adapter-luxon.js') }}"></script>
+<script type="module" src="{{ url_for('static', path='/js/probe_status.js') }}"></script>
+{% endif %}
+{% endblock %}
+{% block main %}
+<article>
+  <header>
+    <hgroup>
+      {% if probe_details.name %}
+      <h2>Probe: {{ probe_details|attr('name') }}</h2>
+      {% else %}
+      <h2 data-missing="<unnamed>">Probe: </h2>
+      {% endif %}
+      <p><span id="probe-id">{{ info.id }}</span></p>
+    </hgroup>
+  </header>
+  <dl>
+    <div>
+      <dt>Country</dt>
+      <dd>{{ info|attr('country')|default('—', true) }}</dd>
+    </div>
+    <div>
+      <dt>Status</dt>
+      <dd>{{ info|attr('status') }}</dd>
+    </div>
+    <div>
+      <dt>First deployed</dt>
+      <dd>{{ info|attr('first_deployed')|default('—', true) }}</dd>
+    </div>
+  </dl>
+  {% if full_info %}
+  <hr>
+  <dl>
+    <div id="timestamp">
+      <dt>Last update</dt>
+      <dd><time datetime="{{ info.timestamp.isoformat() }}">{{ info.timestamp.strftime('%Y-%m-%d %H:%M:%S %Z') }}</time></dd>
+    </div>
+    <div id="temperature">
+      <dt>Temp</dt>
+      <dd>{{ info.temperature | round }}&#x202F;°C</dd>
+    </div>
+    <div id="uptime">
+      <dt>Uptime</dt>
+      <dd><time datetime={{ format_iso_duration(info.uptime) }}>{{ info.uptime }}</time></dd>
+    </div>
+    <div id="ip">
+      <dt>IP</dt>
+      <dd>{{ info.ip_address }}</dd>
+    </div>
+    <div id="rxtx">
+      <dt>RX / TX</dt>
+      <dd>{{ format_human_size(info.rx_bytes) }} / {{ format_human_size(info.tx_bytes) }}</dd>
+    </div>
+  </dl>
+  <footer>
+    <a download="{{ (probe_details.name or info.id) ~ '_status_history.json' }}" href="{{ url_for('probe_status_hist', probe_id = info.id, ) ~ '?timeframe=P10YT' }}">Download Full Status History</a>
+  </footer>
+  {% endif %}
+</article>
+{% if full_info %}
+<article>
+  <header>
+    <hgroup>
+      <h2>History</h2>
+      <p>of the last 15 minutes</p>
+    </hgroup>
+  </header>
+  <noscript>
+    Temperature and network activity graphs are currently only available when JavaScript is enabled.
+  </noscript>
+  <div class="grid">
+    <div><canvas id="temp-chart" role="img" aria-label="foo"></canvas></div>
+    <div><canvas id="rxtx-chart" role="img" aria-label="foo"></canvas></div>
+  </div>
+</article>
+<article>
+  <header>
+    <h2>Settings</h2>
+  </header>
+  <form action="{{ url_for('update_probe_details', probe_id = info.id) }}" method="post" >
+    <label>
+      Power LED<br>
+      <input type="checkbox" name="led" role="switch" {% if probe_details.led %}checked{% endif %} />
+    </label>
+    <label>
+      Probe Name
+      <input type="text" name="name" placeholder="Probe Name" maxlength="32" />
+    </label>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+    <input type="submit" value="Change" />
+  </form>
+  <hr>
+  <form action="{{ url_for('reboot_probe', probe_id = info.id) }}" method="post" >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+    <input type="submit" value="Reboot" />
+  </form>
+</article>
+{% endif %}
+{% endblock %}

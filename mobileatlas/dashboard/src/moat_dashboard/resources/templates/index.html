@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block scripts %}
+<script defer src="{{ url_for('static', path='/js/zoom.js') }}"></script>
+{% endblock %}
+{% block stylesheets %}
+<link href="{{ url_for('static', path='/css/index.css') }}" rel="stylesheet" />
+{% endblock %}
+{% block main %}
+<article class="world-map">
+  <header>
+    <h1>Available Locations</h1>
+  </header>
+  {{ map | safe }}
+</article>
+  {#<object type="image/svg+xml" data="/probes/map"></object>#}
+{#<article>
+  <header>Probes</header>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Country</th>
+        <th scope="col">Uptime</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">SBA</th>
+        <td>AT</td>
+        <td>24h</td>
+      </tr>
+      <tr>
+        <th scope="row">SBA v2</th>
+        <td>AT</td>
+        <td>1h 20m</td>
+      </tr>
+    </tbody>
+  </table>
+</article>#}
+{% endblock %}

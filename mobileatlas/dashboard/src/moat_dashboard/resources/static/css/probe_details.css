@@ -1,0 +1,29 @@
+dl {
+  display: grid;
+  justify-items: stretch;
+  grid-template-columns: repeat(auto-fit, minmax(200px, max-content));
+  column-gap: 10px;
+}
+
+dt {
+  font-weight: bold;
+}
+
+.probe-name > summary > h2 {
+  width: fit-content;
+  display: inline-block;
+  margin-bottom: 0;
+}
+
+.probe-name {
+  margin-bottom: 0;
+}
+
+.probe-name > summary::after {
+  display: inline-block;
+  float: none;
+}
+
+canvas {
+  background-color: white;
+}

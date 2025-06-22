@@ -1,0 +1,25 @@
+{% extends "error_base.html" %}
+{% block header %}
+<h1>Failed to validate request parameters</h1>
+{% endblock %}
+{% block desc %}
+<table>
+  <caption>
+    Parameters that failed validation:
+  </caption>
+  <thead>
+    <tr>
+      <th scope="col">Location</th>
+      <th scope="col">Message</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for error in errs %}
+    <tr>
+      <th scope="row">{{ error['loc']|join(' → ') }}</th>
+      <td>{{ error['msg'] }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

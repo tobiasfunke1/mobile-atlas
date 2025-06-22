@@ -1,0 +1,13 @@
+{% extends "error_base.html" %}
+{% block header %}
+<h1>{{ status }} — {{ status.phrase }}</h1>
+{% endblock %}
+{% block desc %}
+{% if status.value == 404 %}
+The requested page does not exist.
+{% elif status.value == 500 %}
+An internal server error occurred.
+{% else %}
+An unexpected error occurred.
+{% endif %}
+{% endblock %}

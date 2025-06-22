@@ -1,0 +1,79 @@
+.logo {
+  height: 2rem;
+}
+
+article > header > :is(h1, h2, h3, h4, h5, h6) {
+  margin-bottom: 0;
+}
+
+/* Increase the clickable region of links to the full cell width. */
+td > a {
+  display: inline-block;
+  width: 100%;
+}
+
+/* Pico CSS color customisation */
+
+/*
+[data-theme="light"],
+:root:not([data-theme="dark"]) {
+  --pico-primary: #0076df;
+}
+
+@media only screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --pico-primary: #0076df;
+  }
+}
+
+[data-theme="dark"] {
+  --pico-primary: #0076df;
+}
+*/
+
+table tr > .no-data {
+  text-align: center;
+  opacity: 0.5;
+}
+
+/*tbody.stripped > tr:nth-child(odd) > :is(th, td) {
+  background-color: var(--pico-table-row-stripped-background-color);
+}*/
+
+.pagination-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pagination-box > * {
+  margin-bottom: 0;
+}
+
+.icon {
+  height: 1em;
+  width: 1em;
+  vertical-align: -0.125em;
+  fill: var(--pico-color);
+}
+
+.missing {
+  color: var(--pico-muted-color);
+  font-size: smaller;
+}
+
+[data-missing]::after {
+  content: attr(data-missing);
+  color: var(--pico-muted-color);
+  font-size: smaller;
+}
+
+.space-between {
+  display: flex;
+  justify-content: space-between;
+}
+
+table > caption {
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}

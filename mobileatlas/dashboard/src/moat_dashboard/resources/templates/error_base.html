@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block nav %}
+<header class="container">
+  <nav>
+    <ul>
+      <li>
+        <a aria-label="MobileAtlas Dashboard Home" href="/">
+          <img
+            class="logo"
+            src="{{ url_for('static', path='/img/mobile-atlas-logo.svg') }}"
+            alt="MobileAtlas Logo"
+          />
+        </a>
+      </li>
+      <li><a href="{{ url_for('probes') }}">Probes</a></li>
+    </ul>
+  </nav>
+</header>
+{% endblock %}
+{% block main %}
+<article>
+  <header>
+    {% block header %}
+    {% endblock %}
+  </header>
+  {% block desc %}
+  {% endblock %}
+  <footer class="space-between">
+    <a role="button" href="/">Home</a>
+    <a role="button" href="{{ url }}">Retry</a>
+  </footer>
+</article>
+{% endblock %}

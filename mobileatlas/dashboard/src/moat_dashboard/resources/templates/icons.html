@@ -1,0 +1,8 @@
+{% macro icon(name, title) %}
+<svg class="icon" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>{{ title }}</title>
+  <use
+    href="{{ url_for('static', path = '/img/fa-solid.svg' ~ '#' ~ name) }}"
+  ></use>
+</svg>
+{% endmacro %}

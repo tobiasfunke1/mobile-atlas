@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "moat-dashboard"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "authlib",
+  "fastapi",
+  "httpx",
+  "itsdangerous",
+  "jinja2",
+  "psycopg",
+  "psycopg-pool",
+  "pycountry",
+  "pydantic-extra-types",
+  "pydantic-settings",
+  "pyjwt",
+  "python-multipart",
+  "redis",
+  "uvicorn",
+  "websockets",
+]
+
+[project.scripts]
+moat-dashboard = "moat_dashboard.cli:run"
+moat-dash-migrate = "moat_dash_migrations.cli:run"

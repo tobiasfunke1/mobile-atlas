@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard</title>
+    <link href="assets/pico-main/css/pico.classless.blue.min.css" rel="stylesheet">
+    <link href="css/main.css" rel="stylesheet">
+  </head>
+  <body>
+    <header>
+      <nav>
+        <ul>
+          <a aria-label="MobileAtlas Dashboard Home" href="/" >
+            <img class="logo" src="assets/img/mobile-atlas-logo.svg" alt="MobileAtlas Logo" />
+          </a>
+        </ul>
+        <ul>
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li><a href="#">Login</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <article>
+        <canvas id="chart"></canvas>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script type="module">
+          const ctx = document.getElementById("chart");
+          const labels = [1, 2, 3, 4, 5];
+          const data = {
+            labels: labels,
+            datasets: [{
+              label: "Foo",
+              data: [1, 2, 3, 4, 5],
+              fill: false,
+              borderColor: "rgb(75, 192, 192)",
+              tension: 0.1,
+            }],
+          };
+
+          const chart = new Chart(ctx, {
+            type: "line",
+            data: data,
+          });
+
+          await new Promise(r => setTimeout(r, 2000))
+
+          for (let i = 0; i < 100; i++) {
+            const l = chart.data.labels.shift();
+            chart.data.labels.push(l);
+            const d = chart.data.datasets[0].data.shift();
+            chart.data.datasets[0].data.push(d);
+            chart.update("resize");
+            await new Promise(r => setTimeout(r, 2000));
+          }
+        </script>
+      </article>
+    </main>
+  </body>
+</html>
