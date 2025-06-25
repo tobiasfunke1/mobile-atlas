@@ -32,8 +32,27 @@ Further information can be found on our [website](https://www.mobileatlas.eu/).
 
 ### Publications
 * [[GLOBECOM22] Zero-Rating, One Big Mess: Analyzing Differential Pricing Practices of European MNOs](https://www.mobileatlas.eu/papers/22_GLOBECOM_Zero_Rating_One_Big_Mess.pdf)
+  ```bibtex
+  @inproceedings{gegenhuber2022zero,
+    title={Zero-Rating, One Big Mess: Analyzing Differential Pricing Practices of European MNOs},
+    author={Gegenhuber, Gabriel K and Mayer, Wilfried and Weippl, Edgar},
+    booktitle={GLOBECOM 2022-2022 IEEE Global Communications Conference},
+    pages={203--208},
+    year={2022},
+    organization={IEEE}
+  }
+  ```
 * [[USENIX Security '23] MobileAtlas: Geographically Decoupled Measurements in Cellular Networks for Security and Privacy Research](https://mobileatlas.eu/papers/23_USENIX_SECURITY_MobileAtlas_Geographically_Decoupled_Measurements_in_Cellular_Networks.pdf)
-
+  ```bibtex
+  @inproceedings{gegenhuber2023mobileatlas,
+    title={MobileAtlas: Geographically Decoupled Measurements in Cellular Networks for Security and Privacy Research},
+    author={Gegenhuber, Gabriel K and Mayer, Wilfried and Weippl, Edgar and Dabrowski, Adrian},
+    booktitle={32nd USENIX Security Symposium (USENIX Security 23)},
+    pages={3493--3510},
+    year={2023}
+  }
+  ```
+  
 ### Presentations
 * [USENIX Security '23] MobileAtlas: Geographically Decoupled Measurements in Cellular Networks for Security and Privacy Research: [Info](https://www.usenix.org/conference/usenixsecurity23/presentation/gegenhuber), [Slides](https://www.usenix.org/system/files/sec23_slides_gegenhuber-gabriel.pdf)
 * [DEF CON 31] Cellular Carriers Hate this Trick: Using SIM Tunneling to Travel at Light Speed: [Info](https://info.defcon.org/event/?id=50791), [Recording](https://www.youtube.com/watch?v=MYfeNyZIzBE), [Slides](https://media.defcon.org/DEF%20CON%2031/DEF%20CON%2031%20presentations/Adrian%20atrox%20Dabrowski%20Gabriel%20K.%20Gegenhuber%20-%20Cellular%20carriers%20hate%20this%20trick%20Using%20SIM%20tunneling%20to%20travel%20at%20light%20speed.pdf)
@@ -74,6 +93,13 @@ We are looking for early adopters, who share interest in the topic and like to c
 Right now, we need people (or organizations, universities, research institutes, etc.) that host measurement probes. 
 Further information can be found on our [website](https://www.mobileatlas.eu/).
 
+SIMulator
+---------------------------------------
+Our MobileAtlas probes prove that only basic hardware (i.e., a UART interface and GPIO ports) is enough to accomplish full SIM tracing capabilities.
+To popularize SIM tracing and lower the entry barrier for hobbyists and other researchers, we therefore implemented a light-weight version of our SIM tunnel using ultra-lowcost hardware (i.e., a Raspberry Pi Pico).
+The Raspberry Pi Pico can operate in two modes when connecting to the modem: i) a synchronous mode, which requires an additional wire but automatically adapts to different clock (CLK) frequencies, and ii) an asynchronous mode, which simplifies wiring but requires one-time manually setting the CLK frequency (same as our MobileAtlas probes).
+To further broaden potential use cases, we experimentally extend support beyond SIM cards to other types of contact smartcards (i.e., both T=0 and T=1 cards), thereby also enabling the introspection and relaying of payment card communication.
+
 Acknowledgments
 ---------------------------------------
 MobileAtlas was developed at [SBA Research](https://www.sba-research.org/) and [University of Vienna](https://sec.cs.univie.ac.at/) by 
@@ -81,6 +107,8 @@ MobileAtlas was developed at [SBA Research](https://www.sba-research.org/) and [
 [Wilfried Mayer](https://www.sba-research.org/team/wilfried-mayer/),
 [Adrian Dabrowski](https://www.sba-research.org/team/adrian-dabrowski/), and
 [Philipp Frenzel](https://www.sba-research.org/team/philipp-frenzel/).
+
+We want to thank [Fabian Funder](https://www.sba-research.org/team/fabian-funder/) for his practical work on the [Pico-SIM-tunnel](#simulator).
 
 Additionally, thanks go to [Markus Maier](https://www.sba-research.org/team/markus-maier/) for his occasional advice and his help designing the [SIM PCB](/hardware/sim-adapter).
 
