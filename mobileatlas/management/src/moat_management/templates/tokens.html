@@ -21,7 +21,7 @@
         <td>{{t.token}}</td>
         <td>{{t.mac}}</td>
         <td>{{t.scope.pretty()}}</td>
-        <td>{{t.logs | map(attribute="time") | first}}</td>
+        <td>{{token_tss[t.id]}}</td>
         <td>{{t.config.ip}}</td>
         <td>{{t.probe.name}}</td>
         <td>
@@ -52,7 +52,7 @@
         <td>{{t.token_candidate}}</td>
         <td>{{t.mac}}</td>
         <td>{{t.scope.pretty()}}</td>
-        <td>{{t.logs | selectattr("action", "eq", TokenAction.Registered) | map(attribute="time") | first}}</td>
+        <td>{{token_req_tss[t.id]}}</td>
         <td>
           <input class="token" type="hidden" value="{{t.token_candidate}}">
           <input class="token-scope" type="hidden" value="{{t.scope.value}}">

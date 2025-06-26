@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -24,7 +24,7 @@ async def token_index(
 ):
     await session.begin()
 
-    load_attrs = [MamToken.logs, MamToken.config, MamToken.probe]
+    load_attrs = [MamToken.config, MamToken.probe]
     tokens = (
         await session.scalars(
             select(MamToken)
@@ -39,10 +39,31 @@ async def token_index(
             .where(MamToken.token == None)
         )
     ).all()
+    token_tss = (
+        await session.execute(
+            select(MamTokenAccessLog.token_id, func.max(MamTokenAccessLog.time))
+            .where(MamTokenAccessLog.token_id.in_(list(map(lambda t: t.id, tokens))))
+            .group_by(MamTokenAccessLog.token_id)
+        )
+    ).all()
+    token_tss = dict(token_tss)  # type: ignore
+    token_req_tss = (
+        await session.execute(
+            select(MamTokenAccessLog.token_id, func.max(MamTokenAccessLog.time))
+            .where(
+                MamTokenAccessLog.token_id.in_(list(map(lambda t: t.id, token_reqs)))
+                & (MamTokenAccessLog.action == TokenAction.Registered)
+            )
+            .group_by(MamTokenAccessLog.token_id)
+        )
+    ).all()
+    token_req_tss = dict(token_req_tss)  # type: ignore
 
     ctx = {
         "tokens": tokens,
+        "token_tss": token_tss,
         "token_reqs": token_reqs,
+        "token_req_tss": token_req_tss,
         "TokenAction": TokenAction,
     }
     return get_templates().TemplateResponse(
