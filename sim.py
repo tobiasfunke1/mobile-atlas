@@ -113,6 +113,8 @@ certificate.')
                         help="MobileAtlas-tunnel-server REST API URL")
     server_parser.add_argument('--tls-server-name', help='SIM server name used in certificate \
 verification. (defaults to the value of --host)')
+    server_parser.add_argument('--cert', help='Optional client certificate for mTLS')
+    server_parser.add_argument('--key', help='Key for optional client certificate')
 
     direct_parser.add_argument('--cert', required=True, help='Server Certificate')
     direct_parser.add_argument('--key', required=True, help='Server Certificate Key')
@@ -164,6 +166,9 @@ verification. (defaults to the value of --host)')
             return
 
         tls_ctx = ssl.create_default_context(cafile=args.cafile, capath=args.capath)
+
+        if args.cert is not None:
+            tls_ctx.load_cert_chain(args.cert, args.key)
 
         if args.tls_server_name is None:
             server_hostname = args.host
