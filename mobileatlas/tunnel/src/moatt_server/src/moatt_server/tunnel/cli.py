@@ -33,6 +33,8 @@ def main():
     if log_conf is not None:
         logging.config.fileConfig(log_conf)
 
+    LOGGER.debug("Initialized config: %s", repr(config.get_config()))
+
     tls_ctx = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
     tls_ctx.load_cert_chain(args.cert, args.cert_key)
 

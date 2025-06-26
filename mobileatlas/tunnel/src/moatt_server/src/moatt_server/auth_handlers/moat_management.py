@@ -31,6 +31,7 @@ class MoatManagementAuth(AuthHandler):
             raise ValueError("moat-management-auth config is not a table.")
 
         self._settings = Settings(**cfg)
+        LOGGER.debug("Loaded the following config: %s", self._settings)
         transport = httpx.AsyncHTTPTransport(
             retries=self._settings.retries,
             uds=str(self._settings.uds) if self._settings.uds is not None else None,

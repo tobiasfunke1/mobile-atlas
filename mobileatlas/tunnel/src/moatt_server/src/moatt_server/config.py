@@ -326,6 +326,7 @@ def init_config(
     except TypeError as e:
         raise ConfigError from e
 
+    LOGGER.debug("Loaded the following configuration: %s", repr(_CONFIG))
     return _CONFIG
 
 
