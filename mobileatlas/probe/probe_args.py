@@ -28,6 +28,12 @@ class ProbeParser(TestParser):
                             help='Path to find CA certificates used to verify SIM server certificate.')
         self.parser.add_argument('--tls-server-name',
                             help='SIM server name used in certificate verification. (defaults to the value of --host)')
+        self.parser.add_argument('--reader', required=False, action='store_true',
+                            help="Select a smartcard based on its 'reader-name'")
+        self.parser.add_argument('--pico-async-mode', required=False, type=int, default=-1,
+                            help="Configure the pico to use the defined clock (in Hz). -1 (default) to use synchronous mode")
+        self.parser.add_argument('--pico-loglevel', required=False, choices=['INFO', 'DEBUG', 'TRACE'], default='DEBUG',
+                            help="Select the loglevel the pico should use")
 
         subparsers = self.parser.add_subparsers(title='subcommands', required=True, dest='subcommand')
         server_parser = subparsers.add_parser('server')
@@ -80,7 +86,16 @@ class ProbeParser(TestParser):
 
     def is_measurement_namespace_enabled(self):
         return self.test_args.start_namespace
+    
+    def get_use_reader(self):
+        return self.test_args.reader
 
+    def get_pico_mode(self):
+        return self.test_args.pico_async_mode
+    
+    def get_pico_loglevel(self):
+        return self.test_args.pico_loglevel
+    
     def get_blacklisted_modules(self):
         return self.test_config.get('module_blacklist', [])
 
