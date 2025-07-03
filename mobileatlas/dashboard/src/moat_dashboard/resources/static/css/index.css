@@ -1,3 +1,46 @@
-.world-map > header {
+#world-map > header {
   margin-bottom: 0;
+}
+
+#world-map > footer {
+  margin-top: 0;
+}
+
+#world-map-legend {
+  display: flex;
+  column-gap: 1em;
+  flex-wrap: wrap;
+  width: fit-content;
+  margin: 0;
+  /*border: var(--pico-border-width) var(--pico-color);*/
+  border-width: var(--pico-border-width);
+  border-color: var(--pico-color);
+  border-radius: var(--pico-border-radius);
+  padding: 0 1em;
+}
+
+#world-map-legend :is(dt, dd) {
+  display: inline-block;
+  margin: 0;
+}
+
+#world-map-legend dd {
+  margin-left: 0.25em;
+}
+
+#world-map-legend dt {
+  width: 1.5em;
+  height: 50%;
+}
+
+#color-online {
+  background-color: #00ff00;
+}
+
+#color-offline {
+  background-color: #ff0000;
+}
+
+#color-unknown {
+  background-color: #ffff00;
 }

@@ -4,27 +4,27 @@
  <defs>
   <style type="text/css">
    path {
-     fill: #CCCCCC;
-     stroke:white;
-     stroke-width:0.5;
+    fill: #CCCCCC;
+    stroke:white;
+    stroke-width:0.5;
    }
    .online {
-     fill: #00ff00;
+    fill: #00ff00;
    }
    .online:hover {
-     fill: #00EE00;
+    fill: #00EE00;
    }
    .offline {
-     fill: #ff0000;
+    fill: #ff0000;
    }
    .offline:hover {
-     fill: #EE0000;
+    fill: #EE0000;
    }
    .unknown {
-     fill: #ffff00;
+    fill: #ffff00;
    }
    .unknown:hover {
-     fill: #EEEE00;
+    fill: #EEEE00;
    }
   </style>
   <amcharts:ammap projection="mercator" leftLongitude="-169.110266" topLatitude="83.63001" rightLongitude="190.480712" bottomLatitude="-58.488473" />
