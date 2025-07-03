@@ -1,7 +1,7 @@
 const probe_id = document.getElementById("probe-id").textContent;
 
 async function get_hist() {
-  const res = await fetch(`/probes/${probe_id}/status/hist?timeframe=PT15M`);
+  const res = await fetch(`/probes/${probe_id}/status/hist`);
   const json = await res.json();
 
   console.debug("Probe status hist response: %o", json);
@@ -124,7 +124,7 @@ async function setup_charts() {
     const idx = ts.findIndex(
       (ts) =>
         now.diff(luxon.DateTime.fromISO(ts)) <
-        luxon.Duration.fromObject({ minutes: 15 }),
+        luxon.Duration.fromObject({ hours: 24 }),
     );
     ts.splice(0, idx);
     temp_data.splice(0, idx);

@@ -315,7 +315,7 @@ async def probe_status_hist(
     db_con: ManDbCon,
     probe_id: UUID4,
     timestamp: datetime | None = None,
-    timeframe: timedelta = timedelta(hours=1),
+    timeframe: timedelta = timedelta(hours=24),
 ) -> DbList[ProbeHistInfo]:
     if probe_id not in user.permissions.hosted_probes and not user.permissions.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
