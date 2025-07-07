@@ -37,12 +37,33 @@ function update_details(data) {
     `${human(d.rx_bytes)} / ${human(d.tx_bytes)}`;
 }
 
+function calc_diffs(arr) {
+  if (arr.length < 2) {
+    return [];
+  }
+
+  const diffs = [];
+  for (let i = 1; i < arr.length; i++) {
+    const d = arr[i] - arr[i - 1];
+    if (d < 0) {
+      diffs.push(arr[i]);
+    } else {
+      diffs.push(d);
+    }
+  }
+
+  return diffs;
+}
+
 async function setup_charts() {
   const data = await get_hist();
   const ts = data.map((s) => s.timestamp);
   const temp_data = data.map((s) => s.temperature);
-  const rx_data = data.map((s) => s.rx_bytes);
-  const tx_data = data.map((s) => s.tx_bytes);
+  const rx_data_abs = data.map((s) => s.rx_bytes);
+  const tx_data_abs = data.map((s) => s.tx_bytes);
+
+  const rx_data = [null].concat(calc_diffs(rx_data_abs));
+  const tx_data = [null].concat(calc_diffs(tx_data_abs));
 
   const temp_chart = new Chart(document.getElementById("temp-chart"), {
     type: "line",
@@ -116,8 +137,8 @@ async function setup_charts() {
     for (const s of data) {
       ts.push(s.timestamp);
       temp_data.push(s.temperature);
-      rx_data.push(s.rx_bytes);
-      tx_data.push(s.tx_bytes);
+      rx_data_abs.push(s.rx_bytes);
+      tx_data_abs.push(s.tx_bytes);
     }
 
     const now = luxon.DateTime.now();
@@ -128,8 +149,10 @@ async function setup_charts() {
     );
     ts.splice(0, idx);
     temp_data.splice(0, idx);
-    rx_data.splice(0, idx);
-    tx_data.splice(0, idx);
+    rx_data_abs.splice(0, Math.max(0, idx - 1));
+    tx_data_abs.splice(0, Math.max(0, idx - 1));
+    rx_data = calc_diffs(rx_data_abs);
+    tx_data = calc_diffs(tx_data_abs);
 
     temp_chart.update();
     rxtx_chart.update();
