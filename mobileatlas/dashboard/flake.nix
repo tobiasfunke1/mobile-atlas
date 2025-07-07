@@ -60,6 +60,7 @@
               ]))
               pkgs.dockerTools.binSh
               pkgs.coreutils
+              pkgs.cacert
             ];
 
             config = {
@@ -72,7 +73,11 @@
                 "[::]:8000"
                 "moat_dashboard.routes:app"
               ];
-              Env = [ "PYTHONUNBUFFERED=1" ];
+              Env = [
+                "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+                "NIX_SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+                "PYTHONUNBUFFERED=1"
+              ];
               ExposedPorts = {
                 "8000" = { };
               };
