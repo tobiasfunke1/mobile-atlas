@@ -1,3 +1,2 @@
-include src/moat_dashboard/map.svg
-recursive-include src/moat_dashboard/templates src/moat_dashboard/static
-recursive-include src/moat_dash_migrations/migrations/*.sql
+include src/moat_dash_migrations/migrations/*.sql
+recursive-include src/moat_dashboard/resources *
