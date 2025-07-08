@@ -236,6 +236,7 @@ async def probe_details(
         name="probe_details.html",
         context={
             "user": user,
+            "pycountries": pycountry.countries,
             "info": info,
             "full_info": full_info,
             "probe_details": probe_details[1] if probe_details else None,

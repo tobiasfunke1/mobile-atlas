@@ -151,8 +151,8 @@ async function setup_charts() {
     temp_data.splice(0, idx);
     rx_data_abs.splice(0, Math.max(0, idx - 1));
     tx_data_abs.splice(0, Math.max(0, idx - 1));
-    rx_data = calc_diffs(rx_data_abs);
-    tx_data = calc_diffs(tx_data_abs);
+    rx_data.splice(0, rx_data.length, ...rx_data_abs);
+    tx_data.splice(0, tx_data.length, ...tx_data_abs);
 
     temp_chart.update();
     rxtx_chart.update();

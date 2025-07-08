@@ -2,7 +2,7 @@
 {% from "icons.html" import icon with context %}
 {% block main %}
 {% macro page_url(page) %}
-{{ url_for('probes') ~ '?page_size=' ~ params.page_size ~ '&page=' ~ page ~ ('&country=' ~ '&country='.join(params.country) if params.country else '') }}
+{{ url_for('probes') ~ '?page_size=' ~ params.page_size ~ '&page=' ~ page ~ ('&country=' ~ '&country='.join(params.country) if params.country else '') ~ ('&status=' ~ '&status='.join(params.status) if params.status else '') ~ '&order_dir=' ~ params.order_dir ~ ('&order_by=' ~ params.order_by if params.order_by) ~ ('&hosted=True' if params.hosted)}}
 {% endmacro %}
 <article>
   <header>

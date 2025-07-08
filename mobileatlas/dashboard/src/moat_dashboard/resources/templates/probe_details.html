@@ -31,7 +31,13 @@
   <dl>
     <div>
       <dt>Country</dt>
-      <dd>{{ info|attr('country')|default('—', true) }}</dd>
+      <dd>
+        {% if info.country %}
+        {{ pycountries.get(alpha_2=info.country).name }} ({{info.country}})
+        {% else %}
+        —
+        {% endif %}
+      </dd>
     </div>
     <div>
       <dt>Status</dt>
@@ -39,7 +45,13 @@
     </div>
     <div>
       <dt>First deployed</dt>
-      <dd>{{ info|attr('first_deployed')|default('—', true) }}</dd>
+      <dd>
+        {% if info.first_deployed %}
+        <time datetime="{{ info.first_deployed.isoformat() }}">{{ info.first_deployed.strftime('%Y-%m-%d %H:%M:%S %Z') }}</time>
+        {% else %}
+        —
+        {% endif %}
+      </dd>
     </div>
   </dl>
   {% if full_info %}
@@ -63,7 +75,7 @@
     </div>
     <div id="rxtx">
       <dt>RX / TX</dt>
-      <dd>{{ format_human_size(info.rx_bytes) }} / {{ format_human_size(info.tx_bytes) }}</dd>
+      <dd>{{ info|attr('rx_bytes')|filesizeformat }} / {{ info|attr('tx_bytes')|filesizeformat }}</dd>
     </div>
   </dl>
   <footer>
