@@ -56,7 +56,7 @@
   </dl>
   {% if full_info %}
   <hr>
-  <dl>
+  <dl aria-live="off">
     <div id="timestamp">
       <dt>Last update</dt>
       <dd><time datetime="{{ info.timestamp.isoformat() }}">{{ info.timestamp.strftime('%Y-%m-%d %H:%M:%S %Z') }}</time></dd>
@@ -88,15 +88,15 @@
   <header>
     <hgroup>
       <h2>History</h2>
-      <p>of the last 15 minutes</p>
+      <p>of the last 24 hours</p>
     </hgroup>
   </header>
   <noscript>
     Temperature and network activity graphs are currently only available when JavaScript is enabled.
   </noscript>
   <div class="grid">
-    <div><canvas id="temp-chart" role="img" aria-label="foo"></canvas></div>
-    <div><canvas id="rxtx-chart" role="img" aria-label="foo"></canvas></div>
+    <div><canvas id="temp-chart" role="img" aria-label="A graph showing temperature changes over the last 24 hours."></canvas></div>
+    <div><canvas id="rxtx-chart" role="img" aria-label="A graph showing the network activity over the last 24 hours."></canvas></div>
   </div>
 </article>
 <article>
