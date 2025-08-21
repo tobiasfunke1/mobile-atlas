@@ -212,19 +212,21 @@ async def probe_details(
     user: Annotated[UserInfo | None, Security(get_user_optional)],
     csrf_token: Annotated[str | None, Depends(csrf_token)],
 ):
+    probe_admin = False
+
     if user is not None and (
         probe_id in user.permissions.hosted_probes or user.permissions.admin
     ):
         info = await get_full_probe_infos(mdb_con, [probe_id])
-        full_info = True
+        probe_admin = True
     else:
         info = (await get_probe_infos(mdb_con, [probe_id]))[0]
-        full_info = False
 
     if len(info) != 1:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     info = info[0]
+    full_info = isinstance(info, ProbeInfoFull)
 
     probe_details = await anext(get_probe_details(db_con, [probe_id]), None)
 
@@ -239,6 +241,7 @@ async def probe_details(
             "pycountries": pycountry.countries,
             "info": info,
             "full_info": full_info,
+            "probe_admin": probe_admin,
             "probe_details": probe_details[1] if probe_details else None,
             "csrf_token": csrf_token,
         },

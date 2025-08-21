@@ -336,10 +336,9 @@ async def get_probe_infos(
     return result, total
 
 
-# TODO: handle case where a probe does not have any system information
 async def get_full_probe_infos(
     con: AsyncConnection, probe_ids: list[UUID]
-) -> list[ProbeInfoFull]:
+) -> list[ProbeInfo | ProbeInfoFull]:
     if len(probe_ids) == 0:
         return []
 
@@ -367,7 +366,10 @@ async def get_full_probe_infos(
         result = []
 
         async for row in cur:
-            result.append(ProbeInfoFull(**row))
+            if row.get("timestamp") is not None:
+                result.append(ProbeInfoFull(**row))
+            else:
+                result.append(ProbeInfo(**row))
 
     try:
         first_deployed = await _get_first_deployed(
