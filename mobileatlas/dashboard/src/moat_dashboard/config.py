@@ -1,9 +1,16 @@
+import os
 import sys
 import logging
 import logging.config
 
 from pydantic import PostgresDsn, RedisDsn, ValidationError
-from pydantic_settings import BaseSettings
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    TomlConfigSettingsSource,
+)
+
+CONFIG_FILE_ENV_VAR = "MOAT_DASHBOARD_CONFIG"
 
 LOGGER = logging.getLogger(__name__)
 
@@ -17,6 +24,26 @@ class Settings(BaseSettings):
     frontend_db_url: PostgresDsn
     redis_url: RedisDsn
     logging_config: str | None = None
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        sources = [init_settings, env_settings]
+
+        if CONFIG_FILE_ENV_VAR in os.environ:
+            sources.append(
+                TomlConfigSettingsSource(
+                    settings_cls, toml_file=os.environ[CONFIG_FILE_ENV_VAR]
+                )
+            )
+
+        return tuple(sources)
 
 
 try:

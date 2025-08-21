@@ -336,6 +336,7 @@ async def get_probe_infos(
     return result, total
 
 
+# TODO: handle case where a probe does not have any system information
 async def get_full_probe_infos(
     con: AsyncConnection, probe_ids: list[UUID]
 ) -> list[ProbeInfoFull]:
