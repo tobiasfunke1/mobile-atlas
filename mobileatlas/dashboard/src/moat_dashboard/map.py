@@ -66,7 +66,6 @@ async def update_map():
     statuses = None
     async for con in get_db():
         statuses = await get_probe_online_statuses(con)
-        print(statuses)
 
     assert statuses is not None
 

@@ -62,7 +62,7 @@
         <th scope="col">Name</th>
         <th scope="col">Country</th>
         <th scope="col">Status</th>
-        <th scope="col" style="text-align: right;">Details</th>
+        <th scope="col" class="right-align">Details</th>
       </tr>
     </thead>
     <tbody>
@@ -71,7 +71,7 @@
           <th scope="row">{{ probe.name or probe.id }}</th>
           <td>{{ probe.country|default('—',true) }}</td>
           <td>{{ probe.status }}</td>
-          <td style="text-align: right;"><a href="{{ url_for('probe_details', probe_id = probe.id) }}">{{ icon('arrow-up-right-from-square', 'Link to probe details') }}</a></td>
+          <td class="right-align"><a href="{{ url_for('probe_details', probe_id = probe.id) }}">{{ icon('arrow-up-right-from-square', 'Link to probe details') }}</a></td>
         </tr>
       {% else %}
         <tr><td colspan="4" class="no-data">&lt;no results&gt;</td></tr>

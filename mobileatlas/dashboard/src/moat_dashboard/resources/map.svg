@@ -2,31 +2,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:amcharts="http://amcharts.com/ammap" version="1.1" viewBox="0 0 1011 665" class="zoomable">
  <desc>A world map showing the locations covered by MobileAtlas.</desc>
  <defs>
-  <style type="text/css">
-   path {
-    fill: #CCCCCC;
-    stroke:white;
-    stroke-width:0.5;
-   }
-   .online {
-    fill: #00ff00;
-   }
-   .online:hover {
-    fill: #00EE00;
-   }
-   .offline {
-    fill: #ff0000;
-   }
-   .offline:hover {
-    fill: #EE0000;
-   }
-   .unknown {
-    fill: #ffff00;
-   }
-   .unknown:hover {
-    fill: #EEEE00;
-   }
-  </style>
   <amcharts:ammap projection="mercator" leftLongitude="-169.110266" topLatitude="83.63001" rightLongitude="190.480712" bottomLatitude="-58.488473" />
  </defs>
  <g>

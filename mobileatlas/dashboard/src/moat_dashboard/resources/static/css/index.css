@@ -44,3 +44,32 @@
 #color-unknown {
   background-color: #ffff00;
 }
+
+#world-map > svg path {
+  fill: #cccccc;
+  stroke: white;
+  stroke-width: 0.5;
+}
+#world-map > svg .online {
+  fill: #00ff00;
+}
+
+#world-map > svg .online:hover {
+  fill: #00ee00;
+}
+
+#world-map > svg .offline {
+  fill: #ff0000;
+}
+
+#world-map > svg .offline:hover {
+  fill: #ee0000;
+}
+
+#world-map > svg .unknown {
+  fill: #ffff00;
+}
+
+#world-map > svg .unknown:hover {
+  fill: #eeee00;
+}
