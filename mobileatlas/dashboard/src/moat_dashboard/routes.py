@@ -66,7 +66,7 @@ LOGGER = logging.getLogger(__name__)
 REDIS = None
 TEMPLATES = None
 
-UserInfoSec = Annotated[UserInfo, Security(get_user, scopes=["hosted_probes"])]
+UserInfoSec = Annotated[UserInfo, Security(get_user)]
 ManDbCon = Annotated[AsyncConnection, Depends(get_management_db)]
 DbCon = Annotated[AsyncConnection, Depends(get_db)]
 
