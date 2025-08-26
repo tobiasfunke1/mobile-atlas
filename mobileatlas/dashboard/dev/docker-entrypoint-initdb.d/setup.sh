@@ -324,4 +324,12 @@ ALTER TABLE ONLY public.token_sim_association_table
     ADD CONSTRAINT token_sim_association_table_token_id_fkey FOREIGN KEY (token_id) REFERENCES public.moat_tokens(id);
 ALTER TABLE ONLY public.wireguard_config
     ADD CONSTRAINT wireguard_config_token_id_fkey FOREIGN KEY (token_id) REFERENCES public.mam_tokens(id);
+
+
+-- insert test data
+
+INSERT INTO mam_tokens (id, token, mac, scope) VALUES (1, 'n1wiw/hPXZ8A69Nirzr2sO+DlIYHwSlNqRJkYgvN', 'ff:ff:ff:ff:ff:ff', 'wireguard');
+INSERT INTO probe (id, name, token_id) VALUES ('7df79a4c-e289-4cc2-ac84-f39aab4cae3b', 'test-data', 1);
+INSERT INTO probe_system_information (probe_id, timestamp, information) VALUES ('7df79a4c-e289-4cc2-ac84-f39aab4cae3b', 'NOW', '{"network":[{"addr_info":[{"family":"inet","label":"lo","local":"127.0.0.1","preferred_life_time":4294967295,"prefixlen":8,"scope":"host","valid_life_time":4294967295}],"flags":["LOOPBACK","UP","LOWER_UP"],"group":"default","ifindex":1,"ifname":"lo","mtu":65536,"operstate":"UNKNOWN","qdisc":"noqueue","stats64":{"rx":{"bytes":8080,"dropped":0,"errors":0,"multicast":0,"over_errors":0,"packets":90},"tx":{"bytes":8080,"carrier_errors":0,"collisions":0,"dropped":0,"errors":0,"packets":90}},"txqlen":1000},{"addr_info":[{"broadcast":"192.168.0.255","dynamic":true,"family":"inet","label":"eth0","local":"192.168.0.42","noprefixroute":true,"preferred_life_time":86399,"prefixlen":24,"scope":"global","valid_life_time":86399}],"flags":["BROADCAST","MULTICAST","UP","LOWER_UP"],"group":"default","ifindex":2,"ifname":"eth0","mtu":1500,"operstate":"UP","qdisc":"mq","stats64":{"rx":{"bytes":19272,"dropped":0,"errors":0,"multicast":0,"over_errors":0,"packets":56},"tx":{"bytes":11182,"carrier_errors":0,"collisions":0,"dropped":0,"errors":0,"packets":76}},"txqlen":1000}],"temp":49.173,"uptime":16.59}
+'::jsonb);
 EOSQL
