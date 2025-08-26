@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     oidc_realm_url: str
-    oidc_realm: str | None
+    oidc_audience_client: str | None = None
     client_secret: str
     client_id: str
     management_db_url: PostgresDsn

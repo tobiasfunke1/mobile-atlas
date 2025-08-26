@@ -1,0 +1,36 @@
+services:
+  hydra:
+    image: oryd/hydra
+    ports:
+      - "4444:4444"
+      - "4445:4445"
+      - "5555:5555"
+    command: serve -c /etc/config/hydra/hydra.yml all --dev
+    volumes:
+      - ./hydra:/etc/config/hydra:ro,Z
+  login-backend:
+    build: .
+    ports:
+      - "3000:3000"
+  redis:
+    image: docker.io/redis
+    ports:
+      - 6379:6379
+  db:
+    image: postgres
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: moat
+      POSTGRES_PASSWORD: hunter2
+    volumes:
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro,Z
+    ports:
+      - "5432:5432"
+  db-migrate:
+    depends_on:
+      - db
+    build:
+      context: ..
+      dockerfile: dev/migrate.Dockerfile
+    environment:
+      frontend_db_url: postgresql://moat_dashboard:hunter2@db/moat_dashboard

@@ -1,0 +1,28 @@
+serve:
+  public:
+    port: 4444
+    tls:
+      enabled: false
+  admin:
+    port: 4445
+    tls:
+      enabled: false
+urls:
+  self:
+    issuer: http://127.0.0.1:4444
+  login: http://127.0.0.1:3000/login
+  consent: http://127.0.0.1:3000/consent
+
+secrets:
+  system:
+    - someSecretThatIsntThatSecret
+dsn: "memory"
+strategies:
+  access_token: jwt
+#oidc:
+#  subject_identifiers:
+#    supported_types:
+#      - public
+#webfinger:
+#  oidc_discovery:
+#    jwks_url: http://localhost:4444/.well-known/jwks.json

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <link href="css/style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <form method="POST" action="/consent">
+      <input
+        type="hidden"
+        name="consent_challenge"
+        value="{{consent_challenge}}"
+      />
+      <label>
+        Admin:
+        <input type="checkbox" name="admin" />
+      </label>
+      <label>
+        Probe UUIDs
+        <input
+          type="text"
+          name="probe_ids"
+          placeholder="UUID"
+          pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+        />
+        <input
+          type="text"
+          name="probe_ids"
+          placeholder="UUID"
+          pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+        />
+        <input
+          type="text"
+          name="probe_ids"
+          placeholder="UUID"
+          pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+        />
+        <input
+          type="text"
+          name="probe_ids"
+          placeholder="UUID"
+          pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+        />
+      </label>
+      <button type="submit">Continue</button>
+    </form>
+  </body>
+</html>

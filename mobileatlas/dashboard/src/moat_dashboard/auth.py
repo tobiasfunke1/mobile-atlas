@@ -103,8 +103,7 @@ class TokenValidator:
         return jwt.decode(
             token,
             key=signing_key,
-            audience="moat-dashboard-client",
-            algorithms=oidc_config["token_endpoint_auth_signing_alg_values_supported"],
+            audience=settings.oidc_audience_client or settings.client_id,
         )
 
     async def validate_access_token(self, token: str) -> dict[str, Any]:
@@ -121,7 +120,6 @@ class TokenValidator:
             token,
             key=signing_key,
             audience="moat-dashboard",
-            algorithms=oidc_config["token_endpoint_auth_signing_alg_values_supported"],
         )
 
     async def refresh_token_grant(self, refresh_token: str) -> TokenResponse | None:
@@ -243,6 +241,8 @@ async def authorize(
         LOGGER.exception("Failed to retrieve OIDC tokens from auth redirect.")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from e
 
+    LOGGER.debug("Received token: %s", token)
+
     if (access_token := token.get("access_token")) is None:
         LOGGER.error("Received OIDC response does not contain an access token.")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -262,7 +262,7 @@ async def authorize(
         await destroy_session(db_con, base64.b64decode(session))
 
     session_expiration = datetime.now(tz=timezone.utc) + timedelta(
-        seconds=token["refresh_expires_in"]
+        seconds=token.get("refresh_expires_in") or 31556926  # 1 Year
     )
     new_session = base64.b64encode(
         await new_user_session(db_con, session_expiration, TokenInfo(**token))
@@ -348,16 +348,23 @@ async def get_user_optional(
         response.delete_cookie("session")
         return None
 
-    token_scopes = payload.get("scope", "").split()
+    if "scope" in payload:
+        token_scopes = payload["scope"].split()
+    elif "scp" in payload:
+        token_scopes = payload["scp"]
+    else:
+        token_scopes = []
+
     for scope in security_scopes.scopes:
         if scope not in token_scopes:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    realm_roles = payload.get("realm_access", {}).get("roles", [])
-    is_admin = isinstance(realm_roles, list) and "admin" in realm_roles
+    is_admin = isinstance(token_scopes, list) and "admin" in token_scopes
 
     if "hosted_probes" in token_scopes:
-        hosted_probes = payload.get("hosted_probes", [])
+        hosted_probes = payload.get("hosted_probes") or payload.get("ext", {}).get(
+            "hosted_probes", []
+        )
     else:
         hosted_probes = []
 
