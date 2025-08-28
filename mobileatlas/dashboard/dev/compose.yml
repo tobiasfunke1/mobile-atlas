@@ -1,6 +1,6 @@
 services:
   hydra:
-    image: oryd/hydra
+    image: docker.io/oryd/hydra
     ports:
       - "4444:4444"
       - "4445:4445"
@@ -17,7 +17,7 @@ services:
     ports:
       - 6379:6379
   db:
-    image: postgres
+    image: docker.io/postgres
     shm_size: 128mb
     environment:
       POSTGRES_USER: moat

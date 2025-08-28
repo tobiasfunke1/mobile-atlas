@@ -9,9 +9,9 @@ serve:
       enabled: false
 urls:
   self:
-    issuer: http://127.0.0.1:4444
-  login: http://127.0.0.1:3000/login
-  consent: http://127.0.0.1:3000/consent
+    issuer: http://localhost:4444
+  login: http://localhost:3000/login
+  consent: http://localhost:3000/consent
 
 secrets:
   system:

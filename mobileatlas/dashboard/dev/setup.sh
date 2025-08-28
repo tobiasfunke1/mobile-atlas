@@ -4,7 +4,7 @@ set -eu
 
 code_client=$(podman compose exec hydra \
   hydra create client \
-  --endpoint 'http://127.0.0.1:4445' \
+  --endpoint 'http://localhost:4445' \
   --grant-type authorization_code,refresh_token \
   --name moat-dashboard-client \
   --response-type code,id_token \
