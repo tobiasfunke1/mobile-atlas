@@ -12,14 +12,16 @@ import datetime
 from pathlib import Path
 
 NET_INTERFACE = "eth0"
-API_ENDPOINT = "https://mam.mobileatlas.eu"
+API_ENDPOINT = "https://api.mobileatlas.sec.univie.ac.at"
 TOKEN_REG_URL = f"{API_ENDPOINT}/tokens/register"
 TOKEN_ACTIVE_URL = f"{API_ENDPOINT}/tokens/active"
 MOBILE_ATLAS_MAIN_DIR = "/etc/mobileatlas/"
 GIT_DIR = "/home/pi/mobile-atlas/"
 
+
 def now():
     return datetime.datetime.now(tz=datetime.timezone.utc)
+
 
 def get_mac_addr(net_interface):
     """Return the mac address from sys filesystem"""
@@ -31,41 +33,51 @@ def get_mac_addr(net_interface):
     except FileNotFoundError:
         return None
 
+
 def get_uptime():
     # Uptime from proc (in seconds)
-    with open('/proc/uptime', 'r') as f:
+    with open("/proc/uptime", "r") as f:
         uptime_seconds = float(f.readline().split()[0])
         return uptime_seconds
 
+
 def get_temperature():
     # CPU Temperature from sys
-    with open('/sys/class/thermal/thermal_zone0/temp', 'r') as f:
-        temp = float(f.readline())/1000
+    with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+        temp = float(f.readline()) / 1000
         return temp
+
 
 def get_network_info():
     try:
-        network_info = json.loads(subprocess.check_output(["ip", "-4", "-s", "-j", "a"]))
-        return network_info    
+        network_info = json.loads(
+            subprocess.check_output(["ip", "-4", "-s", "-j", "a"])
+        )
+        return network_info
     except Exception:
         pass
 
+
 def filter_network_info(if_list, if_name):
-    return next((x for x in if_list if x.get('ifname') == if_name), None)
+    return next((x for x in if_list if x.get("ifname") == if_name), None)
+
 
 def extract_ip_addr(if_info):
-    addr_infos = if_info.get('addr_info', [])
+    addr_infos = if_info.get("addr_info", [])
     addr_info = next((x for x in addr_infos), dict())
-    return addr_info.get('local')
+    return addr_info.get("local")
+
 
 def extract_traffic_stats(if_info):
-    stats = if_info.get('stats64', {})
-    rx = stats.get('rx', {})
-    tx = stats.get('tx', {})
-    return rx.get('bytes'), tx.get('bytes')
+    stats = if_info.get("stats64", {})
+    rx = stats.get("rx", {})
+    tx = stats.get("tx", {})
+    return rx.get("bytes"), tx.get("bytes")
+
 
 def get_hostname():
     return socket.gethostname()
+
 
 def get_git_head(git_dir):
     # git HEAD commit
@@ -75,44 +87,57 @@ def get_git_head(git_dir):
     #     head = f.readline()
     #     information['head'] = head[:8]
     try:
-        git_head = subprocess.check_output(["git", "-C", git_dir, "rev-parse", "--short", "HEAD"]).decode()
+        git_head = subprocess.check_output(
+            ["git", "-C", git_dir, "rev-parse", "--short", "HEAD"]
+        ).decode()
         return git_head
     except Exception:
         pass
+
 
 def get_system_information(git_dir=GIT_DIR):
     """Load system information from different sources"""
     information = dict()
 
-    information['uptime'] = get_uptime()
+    information["uptime"] = get_uptime()
 
-    information['temp'] = get_temperature()
+    information["temp"] = get_temperature()
 
     git_head = get_git_head(git_dir)
     if git_head:
-        information['head'] = git_head
+        information["head"] = git_head
 
     network_info = get_network_info()
     if network_info:
-        information['network'] = network_info
+        information["network"] = network_info
 
     return information
 
 
-def write_activity_log(id, activity_name, start, stop="", target_dir=MOBILE_ATLAS_MAIN_DIR, filename="activities.csv"):
+def write_activity_log(
+    id,
+    activity_name,
+    start,
+    stop="",
+    target_dir=MOBILE_ATLAS_MAIN_DIR,
+    filename="activities.csv",
+):
     path = Path(target_dir) / filename
     path.touch()
-    with path.open('a') as f:
+    with path.open("a") as f:
         f.write(f"{id},{activity_name},{start},{stop}\n")
+
 
 def get_activities(target_dir=MOBILE_ATLAS_MAIN_DIR, filename="activities.csv"):
     path = Path(target_dir) / filename
-    with path.open('r') as f:
-        reader = csv.DictReader(f, fieldnames=['id', 'activity_name', 'start', 'stop'])
+    with path.open("r") as f:
+        reader = csv.DictReader(f, fieldnames=["id", "activity_name", "start", "stop"])
         return list(reader)
 
+
 def filter_activities(activity_list, activity_name):
-    return [x for x in activity_list if activity_name in x.get('activity_name')]
+    return [x for x in activity_list if activity_name in x.get("activity_name")]
+
 
 def load_token(token_dir=MOBILE_ATLAS_MAIN_DIR):
     """Load the stored token or None"""
@@ -122,6 +147,7 @@ def load_token(token_dir=MOBILE_ATLAS_MAIN_DIR):
             return token
     except FileNotFoundError:
         return None
+
 
 def load_or_create_token(token_dir=MOBILE_ATLAS_MAIN_DIR):
     token = load_token(token_dir)
@@ -133,6 +159,7 @@ def load_or_create_token(token_dir=MOBILE_ATLAS_MAIN_DIR):
         store_token(token, token_dir)
         return token
 
+
 # TODO check usage
 def store_token(token, token_dir=MOBILE_ATLAS_MAIN_DIR):
     """Store the token in file"""
@@ -142,8 +169,12 @@ def store_token(token, token_dir=MOBILE_ATLAS_MAIN_DIR):
     with open(token_dir + "/token", "x") as f:
         f.write(f"{token}\n")
 
+
 def register_token(token, mac=None, scope=3, url=TOKEN_REG_URL):
-    return requests.post(url, json={"token_candidate": token, "mac": mac, "scope": scope})
+    return requests.post(
+        url, json={"token_candidate": token, "mac": mac, "scope": scope}
+    )
+
 
 def is_token_active(token, url=TOKEN_ACTIVE_URL):
     headers = {"Authorization": f"Bearer {token}"}

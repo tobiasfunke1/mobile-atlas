@@ -16,10 +16,11 @@ sys.path.append(PROBE_UTILITIES)
 import probe_utilities as probe_util
 
 WIREGUARD_DIR = "/etc/wireguard"
-API_ENDPOINT = "https://mam.mobileatlas.eu"
+API_ENDPOINT = "https://api.mobileatlas.sec.univie.ac.at"
 TOKEN_REG_URL = f"{API_ENDPOINT}/tokens/register"
 REGISTER_URL = f"{API_ENDPOINT}/wireguard/register"
 NET_INTERFACE = "eth0"
+
 
 def get_or_create_mam_token():
     token_path = WIREGUARD_DIR + "/token"
@@ -36,19 +37,31 @@ def get_or_create_mam_token():
         with open(token_path) as f:
             return f.readline()
 
+
 def get_or_create_wireguard_key():
     """
     Either read the keys or create new one with "wg genkey"
     """
     # TODO check if public key is also >0 bytes
-    if not path.exists(WIREGUARD_DIR + "/client_wg0_private.key") or not path.exists(WIREGUARD_DIR + "/client_wg0_public.key"):
+    if not path.exists(WIREGUARD_DIR + "/client_wg0_private.key") or not path.exists(
+        WIREGUARD_DIR + "/client_wg0_public.key"
+    ):
         print("Create new keys")
-        subprocess.Popen(f"wg genkey > {WIREGUARD_DIR}/client_wg0_private.key", shell=True).wait()
-        subprocess.Popen(f"wg pubkey < {WIREGUARD_DIR}/client_wg0_private.key > {WIREGUARD_DIR}/client_wg0_public.key",
-                         shell=True).wait()
+        subprocess.Popen(
+            f"wg genkey > {WIREGUARD_DIR}/client_wg0_private.key", shell=True
+        ).wait()
+        subprocess.Popen(
+            f"wg pubkey < {WIREGUARD_DIR}/client_wg0_private.key > {WIREGUARD_DIR}/client_wg0_public.key",
+            shell=True,
+        ).wait()
 
-    with open(WIREGUARD_DIR + "/client_wg0_public.key") as pubf, open(WIREGUARD_DIR + "/client_wg0_private.key") as privf:
-        return {"public": pubf.readline().rstrip(), "private": privf.readline().rstrip()}
+    with open(WIREGUARD_DIR + "/client_wg0_public.key") as pubf, open(
+        WIREGUARD_DIR + "/client_wg0_private.key"
+    ) as privf:
+        return {
+            "public": pubf.readline().rstrip(),
+            "private": privf.readline().rstrip(),
+        }
 
 
 def save_wireguard_config(private, ip, endpoint, publickey_endpoint, allowed_ips, dns):
@@ -89,29 +102,30 @@ def main():
     print(f"Got publickey {keys['public']}")
 
     res = requests.post(
-            REGISTER_URL,
-            json={"publickey": keys["public"], "mac": mac},
-            headers={"Authorization": f"Bearer {token}"},
-            )
+        REGISTER_URL,
+        json={"publickey": keys["public"], "mac": mac},
+        headers={"Authorization": f"Bearer {token}"},
+    )
 
     if not res.ok:
         print("Error", res.status_code, res.text)
         return
 
     j = res.json()
-    ip = j['ip']
-    endpoint = j['endpoint']
-    endpoint_publickey = j['endpoint_publickey']
-    allowed_ips = j['allowed_ips']
-    dns = j['dns']
+    ip = j["ip"]
+    endpoint = j["endpoint"]
+    endpoint_publickey = j["endpoint_publickey"]
+    allowed_ips = j["allowed_ips"]
+    dns = j["dns"]
 
     # TODO check values: ip/endpoint/endpoint_publickey/allowed_ips
     print("Registered")
 
-    save_wireguard_config(keys['private'], ip, endpoint, endpoint_publickey, allowed_ips, dns)
+    save_wireguard_config(
+        keys["private"], ip, endpoint, endpoint_publickey, allowed_ips, dns
+    )
     print("Stored config")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-
