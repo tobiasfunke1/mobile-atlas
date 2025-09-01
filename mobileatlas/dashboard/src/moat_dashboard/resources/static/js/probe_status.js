@@ -62,8 +62,12 @@ async function setup_charts() {
   const rx_data_abs = data.map((s) => s.rx_bytes);
   const tx_data_abs = data.map((s) => s.tx_bytes);
 
-  const rx_data = [null].concat(calc_diffs(rx_data_abs));
-  const tx_data = [null].concat(calc_diffs(tx_data_abs));
+  const rx_data = [null].concat(
+    calc_diffs(rx_data_abs).map((x) => x / 1_000_000),
+  );
+  const tx_data = [null].concat(
+    calc_diffs(tx_data_abs).map((x) => x / 1_000_000),
+  );
 
   const temp_chart = new Chart(document.getElementById("temp-chart"), {
     type: "line",
@@ -119,7 +123,7 @@ async function setup_charts() {
         },
         y: {
           title: {
-            text: "Bytes",
+            text: "Bytes (MB)",
             display: true,
           },
         },
@@ -151,8 +155,16 @@ async function setup_charts() {
     temp_data.splice(0, idx);
     rx_data_abs.splice(0, Math.max(0, idx - 1));
     tx_data_abs.splice(0, Math.max(0, idx - 1));
-    rx_data.splice(0, rx_data.length, ...rx_data_abs);
-    tx_data.splice(0, tx_data.length, ...tx_data_abs);
+    rx_data.splice(
+      0,
+      rx_data.length,
+      ...calc_diffs(rx_data_abs).map((x) => x / 1_000_000),
+    );
+    tx_data.splice(
+      0,
+      tx_data.length,
+      ...calc_diffs(tx_data_abs).map((x) => x / 1_000_000),
+    );
 
     temp_chart.update();
     rxtx_chart.update();
