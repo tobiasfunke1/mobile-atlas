@@ -7,6 +7,7 @@ from serial.tools import list_ports
 from smartcard.CardMonitoring import CardMonitor, CardObserver
 from smartcard.System import readers
 
+
 class Observer(Thread):
     def __init__(self, sleeping_time):
         super().__init__()
@@ -45,7 +46,6 @@ class SerialObserver(Observer):
         self.listener = []
         self.devices_permission_warning = []
 
-
     @staticmethod
     def check_permissions(tty_device):
         """
@@ -60,12 +60,14 @@ class SerialObserver(Observer):
                 device = s.device
                 has_permission = SerialObserver.check_permissions(device)
                 if device not in current and has_permission:
-                    #notify new device
+                    # notify new device
                     self.current_devices.append(device)
                     self.notify_add(SerialObserver.DEVICE_TYPE, device)
                 elif device in current:
                     current.remove(device)
-                elif not has_permission and device not in self.devices_permission_warning:
+                elif (
+                    not has_permission and device not in self.devices_permission_warning
+                ):
                     self.devices_permission_warning.append(device)
                     logging.warning(f"Device {device} has unsufficient permissions")
 
@@ -80,15 +82,16 @@ class SerialObserver(Observer):
             # devices that remain in current were removed
             for removed in current:
                 self.current_devices.remove(removed)
-                if removed in self.devices_permission_warning: self.devices_permission_warning.remove(removed)
+                if removed in self.devices_permission_warning:
+                    self.devices_permission_warning.remove(removed)
                 self.notify_remove(SerialObserver.DEVICE_TYPE, removed)
         except Exception as e:
-            logging.error('Exception '+ repr(e))
+            logging.exception("Exception " + repr(e))
 
     def notify_add(self, device_type, device):
         for l in self.listener:
             l.device_added(device_type, device)
-    
+
     def notify_remove(self, device_type, device):
         for l in self.listener:
             l.device_removed(device_type, device)
@@ -100,8 +103,6 @@ class SerialObserver(Observer):
         self.listener.remove(obj)
 
 
-
-
 class DeviceObserver(SerialObserver, CardObserver):
     def __init__(self):
         super().__init__()
@@ -110,22 +111,30 @@ class DeviceObserver(SerialObserver, CardObserver):
     def start(self):
         self.cardmonitor.addObserver(self)
         super().start()
-    
+
     def stop(self):
         self.cardmonitor.deleteObserver(self)
         super().stop()
-        #self.join()
+        # self.join()
 
     # callback from cardobserver --> convert to notifications
     def update(self, observable, actions):
         (addedcards, removedcards) = actions
         for card in addedcards:
-            self.notify_add(DeviceEvent.DEVICE_TYPE_SCARD, DeviceObserver.get_scard_reader(card.reader))
+            self.notify_add(
+                DeviceEvent.DEVICE_TYPE_SCARD,
+                DeviceObserver.get_scard_reader(card.reader),
+            )
         for card in removedcards:
-            self.notify_remove(DeviceEvent.DEVICE_TYPE_SCARD, DeviceObserver.get_scard_reader(card.reader))
+            self.notify_remove(
+                DeviceEvent.DEVICE_TYPE_SCARD,
+                DeviceObserver.get_scard_reader(card.reader),
+            )
 
     @staticmethod
-    def get_scard_reader(device):   # basically same as https://github.com/LudovicRousseau/pyscard/blob/master/smartcard/Card.py#L65
+    def get_scard_reader(
+        device,
+    ):  # basically same as https://github.com/LudovicRousseau/pyscard/blob/master/smartcard/Card.py#L65
         if type(device) == str:
             for i, reader in enumerate(readers()):
                 if device == str(reader):
@@ -142,8 +151,10 @@ class TestListener(DeviceEvent):
     def device_removed(self, device_type, device):
         logging.info(f"Removed {device_type} device: {device}")
 
+
 import time
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     observer = DeviceObserver()
     listener = TestListener()
     observer.add_observer(listener)

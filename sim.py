@@ -20,7 +20,6 @@ from moatt_clients.errors import AuthError
 from moatt_clients.moat_management import register_provider, deregister_provider
 from moatt_types.connect import Token, ConnectStatus, Imsi, Iccid, SimId, SimIndex
 
-PORT_DEFAULT = 6666
 
 def init_server(host, port, tls_ctx):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -29,7 +28,7 @@ def init_server(host, port, tls_ctx):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_address = (host, port)
 
-        logging.info('starting up on {} port {}'.format(*server_address))
+        logging.info("starting up on {} port {}".format(*server_address))
         s.bind(server_address)
         s.listen(1)
     except Exception as e:
@@ -38,19 +37,26 @@ def init_server(host, port, tls_ctx):
 
     return tls_ctx.wrap_socket(s, server_side=True)
 
+
 def accept_connection(s):
-    logging.info('waiting for a connection')
+    logging.info("waiting for a connection")
     connection, client_address = s.accept()
-    logging.info('accept connection ' + str(client_address))
+    logging.info("accept connection " + str(client_address))
     return connection
+
 
 def provides_sim(sim_provider, req):
     sim = get_sim(sim_provider, req.identifier)
 
     return ConnectStatus.Success if sim is not None else ConnectStatus.NotFound
 
+
 def get_sims(sim_provider):
-    return [SIM(id=i, iccid=x.iccid, imsi=x.imsi) for i, x in enumerate(sim_provider.get_sims())]
+    return [
+        SIM(id=i, iccid=Iccid(x.iccid), imsi=Imsi(x.imsi))
+        for i, x in enumerate(sim_provider.get_sims())
+    ]
+
 
 def get_sim(sim_provider, ident):
     sims = sim_provider.get_sims()
@@ -62,12 +68,15 @@ def get_sim(sim_provider, ident):
         if ident.index < len(sims):
             return sims[ident.index]
     else:
-        sim = next((x for x in sims if Imsi(x.imsi) == ident or Iccid(x.iccid) == ident), None)
+        sim = next(
+            (x for x in sims if Imsi(x.imsi) == ident or Iccid(x.iccid) == ident), None
+        )
 
         if sim is not None:
             return sim
 
     return None
+
 
 def direct_connection(host, port, sim_provider, tls_ctx):
     srv = init_server(host, port, tls_ctx)
@@ -76,48 +85,99 @@ def direct_connection(host, port, sim_provider, tls_ctx):
         connection = accept_connection(srv)
 
         # First 8 Byte is the IMSI
-        requested_imsi = struct.unpack('!Q', connection.recv(8))[0]
+        requested_imsi = struct.unpack("!Q", connection.recv(8))[0]
 
-        device = next((x for x in sim_provider.get_sims() if x.imsi == requested_imsi), None)
+        device = next(
+            (x for x in sim_provider.get_sims() if x.imsi == requested_imsi), None
+        )
         if device:
-            logging.info(f"requested imsi {requested_imsi} is on device {device.device_name}")
+            logging.info(
+                f"requested imsi {requested_imsi} is on device {device.device_name}"
+            )
             # Start SimTunnel for connection to serial device
-            tunnel = SimTunnel(connection, device.sl, device.iccid, direct_connection=True)
+            tunnel = SimTunnel(
+                connection, device.sl, device.iccid, direct_connection=True
+            )
             tunnel.start()
         else:
-            logging.info(f"requested imsi {requested_imsi} is currently not connected to the system")
+            logging.info(
+                f"requested imsi {requested_imsi} is currently not connected to the system"
+            )
             connection.unwrap()
             connection.shutdown(socket.SHUT_RDWR)
             connection.close()
+
 
 def main():
     logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(conflict_handler="resolve")
 
-    parser.add_argument('-h', '--host', required=True, help="SIM server address")
-    parser.add_argument('-p', '--port', type=int, default=PORT_DEFAULT, help="SIM server port (default: %(default)d)")
-    parser.add_argument('-b', '--bluetooth-mac', type=str, required=False,
-                        help='MAC address of the bluetooth device (rSAP)')
-    parser.add_argument('--cafile', help='CA certificates used to verify SIM server certificate. \
-(File of concatenated certificates in PEM format.)')
-    parser.add_argument('--capath', help='Path to find CA certificates used to verify SIM server \
-certificate.')
+    parser.add_argument(
+        "-b",
+        "--bluetooth-mac",
+        type=str,
+        required=False,
+        help="MAC address of the bluetooth device (rSAP)",
+    )
+    parser.add_argument(
+        "--cafile",
+        help="CA certificates used to verify SIM server certificate. \
+(File of concatenated certificates in PEM format.)",
+    )
+    parser.add_argument(
+        "--capath",
+        help="Path to find CA certificates used to verify SIM server \
+certificate.",
+    )
+    parser.add_argument("--cert", help="Certificate served to clients.")
+    parser.add_argument("--key", help="Certificate key.")
 
-    subparsers = parser.add_subparsers(title='subcommands', required=True, dest='subcommand')
-    server_subcmd = 'server'
+    subparsers = parser.add_subparsers(
+        title="subcommands", required=True, dest="subcommand"
+    )
+    server_subcmd = "server"
     server_parser = subparsers.add_parser(server_subcmd)
-    direct_subcmd = 'direct'
+    direct_subcmd = "direct"
     direct_parser = subparsers.add_parser(direct_subcmd)
 
-    server_parser.add_argument('-a', '--api-url', required=True,
-                        help="MobileAtlas-tunnel-server REST API URL")
-    server_parser.add_argument('--tls-server-name', help='SIM server name used in certificate \
-verification. (defaults to the value of --host)')
-    server_parser.add_argument('--cert', help='Optional client certificate for mTLS')
-    server_parser.add_argument('--key', help='Key for optional client certificate')
+    server_parser.add_argument(
+        "-h",
+        "--host",
+        default="api.mobileatlas.sec.univie.ac.at",
+        help="Tunnel server address. [Default: $(default)s]",
+    )
+    server_parser.add_argument(
+        "-p", "--port", default=6666, help="Tunnel server port. [Default: %(default)d]"
+    )
+    server_parser.add_argument(
+        "-a",
+        "--api-url",
+        default="https://api.mobileatlas.sec.univie.ac.at",
+        help="MobileAtlas-tunnel-server REST API URL",
+    )
+    server_parser.add_argument("--tunnel-api-prefix", default="/tunnel-api")
+    server_parser.add_argument(
+        "--tls-server-name",
+        help="SIM server name used in certificate \
+verification. (defaults to the value of --host)",
+    )
 
-    direct_parser.add_argument('--cert', required=True, help='Server Certificate')
-    direct_parser.add_argument('--key', required=True, help='Server Certificate Key')
+    direct_parser.add_argument("--allow-insecure-transport", action="store_true")
+    direct_parser.add_argument(
+        "-h", "--host", required=True, help="SIM server address."
+    )
+    direct_parser.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=6666,
+        help="SIM server port [Default: %(default)d]",
+    )
+    # server_parser.add_argument("--cert", help="Optional client certificate for mTLS")
+    # server_parser.add_argument("--key", help="Key for optional client certificate")
+
+    # direct_parser.add_argument("--cert", required=True, help="Server Certificate")
+    # direct_parser.add_argument("--key", required=True, help="Server Certificate Key")
     args = parser.parse_args()
 
     if args.subcommand == direct_subcmd:
@@ -128,23 +188,29 @@ verification. (defaults to the value of --host)')
 
         sim_provider = SimProvider(args.bluetooth_mac)
 
-        tls_ctx = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH, cafile=args.cafile, capath=args.capath)
-        tls_ctx.verify_mode = ssl.VerifyMode.CERT_REQUIRED
-        tls_ctx.load_cert_chain(args.cert, args.key)
+        tls_ctx = ssl.create_default_context(
+            purpose=ssl.Purpose.CLIENT_AUTH, cafile=args.cafile, capath=args.capath
+        )
+
+        if not args.allow_insecure_transport:
+            tls_ctx.verify_mode = ssl.VerifyMode.CERT_REQUIRED
+            tls_ctx.load_cert_chain(args.cert, args.key)
 
         direct_connection(args.host, args.port, sim_provider, tls_ctx)
         return
 
-    env_token = os.environ.get("API_TOKEN")
+    env_token = os.environ.get("TUNNEL_API_TOKEN")
 
     if env_token is None:
-        logging.error("API_TOKEN environment variable is unset.")
+        logging.error("TUNNEL_API_TOKEN environment variable is unset.")
         return
 
     try:
         token = Token(base64.b64decode(env_token))
-    except:
-        logging.error("API_TOKEN environment variable contains a malformed API token.")
+    except Exception:
+        logging.error(
+            "TUNNEL_API_TOKEN environment variable contains a malformed API token."
+        )
         return
 
     sim_provider = SimProvider(args.bluetooth_mac)
@@ -152,16 +218,26 @@ verification. (defaults to the value of --host)')
     sims = get_sims(sim_provider)
     try:
         session_token = register_provider(args.api_url, token)
-    except:
+    except Exception:
         logging.exception("Registration with management server failed.")
         return
 
     try:
-        sim_provider.set_device_change_callback(lambda: register_sims(args.api_url, session_token, get_sims(sim_provider)))
+        sim_provider.set_device_change_callback(
+            lambda: register_sims(
+                "https://" + args.host + "/" + args.tunnel_api_prefix,
+                session_token,
+                get_sims(sim_provider),
+            )
+        )
 
         try:
-            register_sims(args.api_url, session_token, sims)
-        except:
+            register_sims(
+                "https://" + args.host + "/" + args.tunnel_api_prefix,
+                session_token,
+                sims,
+            )
+        except Exception:
             logging.exception("SIM card registration failed.")
             return
 
@@ -176,13 +252,13 @@ verification. (defaults to the value of --host)')
             server_hostname = args.tls_server_name
 
         srv = ProviderClient(
-                session_token,
-                args.host,
-                args.port,
-                lambda x: provides_sim(sim_provider, x),
-                tls_ctx=tls_ctx,
-                server_hostname=server_hostname,
-                )
+            session_token,
+            args.host,
+            args.port,
+            lambda x: provides_sim(sim_provider, x),
+            tls_ctx=tls_ctx,
+            server_hostname=server_hostname,
+        )
 
         failed_connections = 0
         while True:
@@ -190,15 +266,19 @@ verification. (defaults to the value of --host)')
             try:
                 id_connection = srv.wait_for_connection()
             except AuthError as e:
-                logging.error(f"Authentication with SIM tunnel failed: {e}\nStopping...")
+                logging.error(
+                    f"Authentication with SIM tunnel failed: {e}\nStopping..."
+                )
                 return
             except Exception as e:
-                logging.warn(f"Error while establishing connection: {e}")
+                logging.warning(f"Error while establishing connection: {e}")
 
                 failed_connections += 1
 
                 if failed_connections > 10:
-                    logging.error("Multiple consecutive connection attempts failed. Stopping...")
+                    logging.error(
+                        "Multiple consecutive connection attempts failed. Stopping..."
+                    )
                     return
 
                 time.sleep(1)
@@ -211,24 +291,29 @@ verification. (defaults to the value of --host)')
 
             sim_info = get_sim(sim_provider, requested_sim)
             if sim_info is not None:
-                logging.info(f"requested imsi {requested_sim} is on device {sim_info.device_name}")
+                logging.info(
+                    f"requested imsi {requested_sim} is on device {sim_info.device_name}"
+                )
                 # Start SimTunnel for connection to serial device
-                #tunnel = SimTunnel(connection, SerialSimLink(device))
-                #tunnel = SimTunnel(connection, BluetoothSapSimLink("80:5A:04:0E:90:F6"))
-                #tunnel = SimTunnel(connection, ModemATCommandLink("/dev/ttyACM0"))
+                # tunnel = SimTunnel(connection, SerialSimLink(device))
+                # tunnel = SimTunnel(connection, BluetoothSapSimLink("80:5A:04:0E:90:F6"))
+                # tunnel = SimTunnel(connection, ModemATCommandLink("/dev/ttyACM0"))
                 tunnel = SimTunnel(connection, sim_info.sl, sim_info.iccid)
                 tunnel.start()
             else:
-                logging.info(f"requested imsi {requested_sim} is currently not connected to the system")
+                logging.info(
+                    f"requested imsi {requested_sim} is currently not connected to the system"
+                )
                 connection.close()
     finally:
         deregister_provider(args.api_url, session_token)
+
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt as keyboard_interrupt:
-        print('Interrupted')
+        print("Interrupted")
         try:
             sys.exit(1)
         except SystemExit as system_exit:

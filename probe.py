@@ -16,7 +16,7 @@ import kmod
 import ssl
 import time
 import base64
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from pathlib import Path
 from mobileatlas.probe.probe_args import ProbeParser
@@ -82,7 +82,7 @@ def wait_for_modem():
 
 
 def main():
-    start = datetime.utcnow()
+    start = datetime.now(timezone.utc)
     """
     Main script on measurement node
          1) Connect to Serial Modem and GPIO with ModemTunnel
@@ -102,13 +102,6 @@ def main():
     except ValueError as e:
         exit(f"{e}\nExiting...")
 
-    if not parser.get_direct_tunnel():
-        try:
-            mam_token = Token(base64.b64decode(os.environ["MAM_TOKEN"]))
-            api_token = Token(base64.b64decode(os.environ["API_TOKEN"]))
-        except:
-            exit("API_TOKEN environment variable is unset.\nExiting...")
-
     # block kernel modules
     blacklist_kernel_modules(parser.get_blacklisted_modules())
 
@@ -119,12 +112,18 @@ def main():
         cafile=parser.get_cafile(), capath=parser.get_capath()
     )
     if parser.get_direct_tunnel():
-        if parser.get_cert() is None or parser.get_key() is None:
+        if (
+            parser.get_cert() is None or parser.get_key() is None
+        ) and not parser.get_allow_insecure_transport():
             exit(
                 "Direct connection requires a client certificate and the corresponding key"
             )
 
-        tls_ctx.load_cert_chain(parser.get_cert(), parser.get_key())
+        if parser.get_allow_insecure_transport():
+            tls_ctx = None
+        else:
+            tls_ctx.load_cert_chain(parser.get_cert(), parser.get_key())
+
         tunnel = ModemTunnel(
             parser.get_modem_type(),
             parser.get_modem_adapter(),
@@ -139,6 +138,12 @@ def main():
             direct_connection=True,
         )
     else:
+        try:
+            mam_token = Token(base64.b64decode(os.environ["MAM_API_TOKEN"]))
+            api_token = Token(base64.b64decode(os.environ["TUNNEL_API_TOKEN"]))
+        except Exception:
+            exit("API_TOKEN environment variable is unset.\nExiting...")
+
         if parser.get_cert() is not None or parser.get_key() is not None:
             tls_ctx.load_cert_chain(parser.get_cert(), parser.get_key())
 
@@ -159,7 +164,7 @@ def main():
 
     logger.info("wait some time until modem is initialized...")
     wait_for_modem()
-    modem_reset_time = datetime.utcnow() - start
+    modem_reset_time = datetime.now(timezone.utc) - start
     logger.info(
         f"modem was detected after {modem_reset_time.total_seconds():.2f} seconds"
     )
@@ -192,7 +197,7 @@ def main():
 
     # shutdown sim tunnel connection
     tunnel.shutdown()
-    stop = datetime.utcnow()
+    stop = datetime.now(timezone.utc)
 
     # simple test log
     path = Path("/etc/activities.csv")

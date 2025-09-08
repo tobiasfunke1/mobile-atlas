@@ -19,16 +19,18 @@ from moatt_types.connect import Imsi
 
 logger = logging.getLogger(__name__)
 
+
 class ModemTunnel(VirtualSim):
     """
     TCP Client to Connect to SIM Server
     Then simulate SIM with SerialModemLink
     """
+
     DEV_SERIAL = "/dev/ttyAMA1"
 
     # using bcm pin numbering
-    PINS_MODEM_POWER_M2 = [(16, 1), (26, 0)] # pin and (default) off state
-    PINS_MODEM_POWER_MPCIE = [(26, 1)] #pin and (default) off state
+    PINS_MODEM_POWER_M2 = [(16, 1), (26, 0)]  # pin and (default) off state
+    PINS_MODEM_POWER_MPCIE = [(26, 1)]  # pin and (default) off state
     PIN_SIM_RST = 5
 
     @staticmethod
@@ -49,31 +51,32 @@ class ModemTunnel(VirtualSim):
         elif modem == "quectel":
             return 3842000
         else:
-            raise Exception('Unknown modem')
+            raise Exception("Unknown modem")
 
     @staticmethod
     def get_powerup_pins(modem_adapter_type):
         if modem_adapter_type == "mpcie":
-            return  ModemTunnel.PINS_MODEM_POWER_MPCIE
+            return ModemTunnel.PINS_MODEM_POWER_MPCIE
         elif modem_adapter_type == "m2":
-            return  ModemTunnel.PINS_MODEM_POWER_M2
+            return ModemTunnel.PINS_MODEM_POWER_M2
         return []
 
-    def __init__(self,
-                 modem_type,
-                 adapter_type,
-                 api_url,
-                 mam_token,
-                 api_token,
-                 sim_server_ip,
-                 sim_server_port,
-                 sim_imsi,
-                 rst_pin=None,
-                 do_pps=True,
-                 tls_ctx=None,
-                 tls_server_name=None,
-                 direct_connection=False,
-                 ):
+    def __init__(
+        self,
+        modem_type,
+        adapter_type,
+        api_url,
+        mam_token,
+        api_token,
+        sim_server_ip,
+        sim_server_port,
+        sim_imsi,
+        rst_pin=None,
+        do_pps=True,
+        tls_ctx=None,
+        tls_server_name=None,
+        direct_connection=False,
+    ):
         self._modem_type = modem_type
         self._clock = ModemTunnel.get_modem_clk(modem_type)
         self._api_url = api_url
@@ -95,9 +98,15 @@ class ModemTunnel(VirtualSim):
         # bugfix for strange bug at raspi, see https://www.raspberrypi.org/forums/viewtopic.php?t=270917
         # alternatively execute 'read -t 0.1 < /dev/ttyAMA1' after startup
         with serial.Serial(ModemTunnel.DEV_SERIAL, timeout=0.01) as ser:
-            ser.read()  #timeout and discard input buffer
+            ser.read()  # timeout and discard input buffer
 
-        VirtualSim.__init__(self, device=ModemTunnel.DEV_SERIAL, clock=self._clock, timeout=6000, do_pps=do_pps)
+        VirtualSim.__init__(
+            self,
+            device=ModemTunnel.DEV_SERIAL,
+            clock=self._clock,
+            timeout=6000,
+            do_pps=do_pps,
+        )
         # thread should be initialized in above methode, however an error occures when we do not explicitly initialize it
         threading.Thread.__init__(self)
 
@@ -117,11 +126,16 @@ class ModemTunnel(VirtualSim):
             GPIO.setup(pin, GPIO.OUT)
 
     def _setup_direct_connection(self):
-        self._s = self._tls_ctx.wrap_socket(
+        if self._tls_ctx is None:
+            self._s = socket.create_connection(
+                (self._sim_server_ip, self._sim_server_port)
+            )
+        else:
+            self._s = self._tls_ctx.wrap_socket(
                 socket.create_connection((self._sim_server_ip, self._sim_server_port)),
                 server_hostname=self._tls_server_name,
-                )
-        self._s.send(struct.pack('!Q', self._sim_imsi))
+            )
+        self._s.send(struct.pack("!Q", self._sim_imsi))
 
     def _setup_indirect_connection(self):
         mam_token = self._mam_token
@@ -134,12 +148,12 @@ class ModemTunnel(VirtualSim):
 
         self._session_token = session_token
         self.client = ProbeClient(
-                session_token,
-                self._sim_server_ip,
-                self._sim_server_port,
-                tls_ctx=self._tls_ctx,
-                server_hostname=self._tls_server_name,
-                )
+            session_token,
+            self._sim_server_ip,
+            self._sim_server_port,
+            tls_ctx=self._tls_ctx,
+            server_hostname=self._tls_server_name,
+        )
         try:
             self.connection = self.client.connect(Imsi(str(self._sim_imsi)))
         except Exception as e:
@@ -151,7 +165,6 @@ class ModemTunnel(VirtualSim):
             self._setup_direct_connection()
         else:
             self._setup_indirect_connection()
-
 
     def _setup_modem(self):
         """
@@ -177,7 +190,7 @@ class ModemTunnel(VirtualSim):
             self._set_modem_power(0)
             time.sleep(2)
             self._set_modem_power(1)
-        else: #usb type --> power cycle usb hub :)
+        else:  # usb type --> power cycle usb hub :)
             pexpect.run("sudo uhubctl -a cycle")
         logger.info("modem power cycled --> listen for RST")
 
@@ -214,7 +227,7 @@ class ModemTunnel(VirtualSim):
             return self.handle_apdu_indirect(apdu)
 
     def setup(self):
-        #self._f = open("apdu_trace_new.txt", "w")
+        # self._f = open("apdu_trace_new.txt", "w")
         self._setup_connection()
         self._setup_modem()
 
