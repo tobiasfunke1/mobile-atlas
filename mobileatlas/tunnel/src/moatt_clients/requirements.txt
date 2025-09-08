@@ -1,2 +1,2 @@
-pydantic~=2.7
+pydantic~=2.11
 requests~=2.32

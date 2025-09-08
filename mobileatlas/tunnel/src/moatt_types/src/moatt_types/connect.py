@@ -259,7 +259,7 @@ class SimIndex:
     _LEN = 24
 
     def __init__(self, provider: UUID, idx: int):
-        assert id < 2 ** (8 * SimIndex._LEN)
+        assert idx < 2 ** (8 * SimIndex._LEN)
 
         self._provider = provider
         self._idx = idx

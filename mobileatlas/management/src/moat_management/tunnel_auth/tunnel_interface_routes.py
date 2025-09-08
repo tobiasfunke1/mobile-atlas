@@ -132,7 +132,7 @@ async def allowed_sim_request(
 
 @router.post("/identity")
 async def identity(
-    stoken: Annotated[dbm.SessionToken, Depends(get_valid_sess_token)]
+    stoken: Annotated[dbm.SessionToken, Depends(get_valid_sess_token)],
 ) -> UUID:
     if stoken.probe_id is not None:
         return stoken.probe_id

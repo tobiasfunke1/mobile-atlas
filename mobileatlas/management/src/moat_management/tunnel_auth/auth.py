@@ -122,7 +122,7 @@ async def get_valid_sess_token(session: Session, token: pyd.Token) -> dbm.Sessio
 
 
 async def get_valid_provider_token(
-    stoken: Annotated[dbm.SessionToken, Depends(get_valid_sess_token)]
+    stoken: Annotated[dbm.SessionToken, Depends(get_valid_sess_token)],
 ) -> dbm.SessionToken:
     if dbm.MoAtTokenScope.Provider in stoken.scope:
         return stoken
@@ -131,7 +131,7 @@ async def get_valid_provider_token(
 
 
 async def get_valid_probe_token(
-    stoken: Annotated[dbm.SessionToken, Depends(get_valid_sess_token)]
+    stoken: Annotated[dbm.SessionToken, Depends(get_valid_sess_token)],
 ) -> dbm.SessionToken:
     if dbm.MoAtTokenScope.Probe in stoken.scope:
         return stoken

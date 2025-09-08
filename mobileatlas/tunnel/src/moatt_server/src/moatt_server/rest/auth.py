@@ -13,7 +13,7 @@ bearer_token = HTTPBearer()
 
 
 def session_token(
-    token: Annotated[HTTPAuthorizationCredentials, Depends(bearer_token)]
+    token: Annotated[HTTPAuthorizationCredentials, Depends(bearer_token)],
 ) -> Token:
     try:
         return Token(base64.b64decode(token.credentials, validate=True))
