@@ -188,13 +188,14 @@ verification. (defaults to the value of --host)",
 
         sim_provider = SimProvider(args.bluetooth_mac)
 
-        tls_ctx = ssl.create_default_context(
-            purpose=ssl.Purpose.CLIENT_AUTH, cafile=args.cafile, capath=args.capath
-        )
-
         if not args.allow_insecure_transport:
+            tls_ctx = ssl.create_default_context(
+                purpose=ssl.Purpose.CLIENT_AUTH, cafile=args.cafile, capath=args.capath
+            )
             tls_ctx.verify_mode = ssl.VerifyMode.CERT_REQUIRED
             tls_ctx.load_cert_chain(args.cert, args.key)
+        else:
+            tls_ctx = None
 
         direct_connection(args.host, args.port, sim_provider, tls_ctx)
         return
