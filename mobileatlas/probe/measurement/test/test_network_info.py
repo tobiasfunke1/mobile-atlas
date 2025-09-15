@@ -8,7 +8,7 @@ from ..payload.payload_public_ip import PayloadPublicIp
 
 class TestNetworkInfo(TestNetworkBase):
     def __init__(self, parser: TestParser):
-        super().__init__(parser, use_credit_checker=True)
+        super().__init__(parser, use_credit_checker=False)
 
     def execute_test_network_core(self):
         payload = PayloadPublicIp(self.mobile_atlas_mediator)

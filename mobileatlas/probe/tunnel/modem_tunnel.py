@@ -25,8 +25,7 @@ class ModemTunnel(VirtualSim):
     TCP Client to Connect to SIM Server
     Then simulate SIM with SerialModemLink
     """
-
-    DEV_SERIAL = "/dev/ttyAMA1"
+    DEV_SERIAL = "/dev/ttyAMA2"
 
     # using bcm pin numbering
     PINS_MODEM_POWER_M2 = [(16, 1), (26, 0)]  # pin and (default) off state
@@ -50,6 +49,8 @@ class ModemTunnel(VirtualSim):
             return 3842000
         elif modem == "quectel":
             return 3842000
+        elif modem == "rm520":
+            return 4800000
         else:
             raise Exception("Unknown modem")
 

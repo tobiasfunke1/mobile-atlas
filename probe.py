@@ -5,10 +5,21 @@ SIM Modem Script ... Runs on our measurement nodes in controlled environment on 
 
 # venv hack (to make it work with sudo):
 import os
+import sys
+import site
 
-base_dir = os.path.dirname(os.path.abspath(__file__))
-activate_this = os.path.join(base_dir, "mobileatlas/probe/venv/bin/activate_this.py")
-exec(open(activate_this).read(), {"__file__": activate_this})
+venv_path = "/home/pi/mobile-atlas/mobileatlas/probe/venv"
+venv_bin_dir = venv_path + "/bin"
+os.environ["PATH"] = os.pathsep.join([venv_bin_dir] + os.environ.get("PATH", "").split(os.pathsep))
+os.environ["VIRTUAL_ENV"] = venv_path
+
+prev_length = len(sys.path)
+site.addsitedir(os.path.realpath(os.path.join(venv_bin_dir, "../lib/python3.11/site-packages")))
+sys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]
+
+sys.real_prefix = sys.prefix
+sys.prefix = venv_path
+# END venv hack
 
 import pyudev
 import pexpect

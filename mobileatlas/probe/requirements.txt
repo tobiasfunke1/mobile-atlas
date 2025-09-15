@@ -48,6 +48,7 @@ ply==3.11
 psutil==5.9.5
 ptyprocess==0.7.0
 pycairo==1.24.0
+pycryptodome==3.23.0
 pycparser==2.21
 PyGObject==3.44.1
 pylsqpack==0.3.17
@@ -67,7 +68,7 @@ referencing==0.30.2
 requests==2.32.3
 rfc3986==1.5.0
 rpds-py==0.9.2
-RPi.GPIO==0.7.1
+rpi-lgpio==0.6
 s3transfer==0.6.1
 six==1.16.0
 smmap==5.0.0
