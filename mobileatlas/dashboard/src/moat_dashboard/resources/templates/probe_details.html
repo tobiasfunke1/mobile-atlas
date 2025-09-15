@@ -53,6 +53,12 @@
         {% endif %}
       </dd>
     </div>
+    {% if full_info %}
+    <div>
+      <dt>MAC address</dt>
+      <dd>{{ info.mac }}</dd>
+    </div>
+    {% endif %}
   </dl>
   {% if full_info %}
   <hr>

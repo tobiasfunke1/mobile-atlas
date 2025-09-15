@@ -12,6 +12,7 @@ from psycopg import AsyncConnection, sql
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel, RootModel
+from pydantic_extra_types.mac_address import MacAddress
 
 from .config import settings
 
@@ -44,6 +45,7 @@ class ProbeInfoFull(ProbeInfo):
     ip_address: IPv4Address | IPv6Address
     rx_bytes: int
     tx_bytes: int
+    mac: MacAddress
 
 
 class ProbeHistInfo(BaseModel):
@@ -347,6 +349,7 @@ async def get_full_probe_infos(
             "SELECT DISTINCT ON (p.id) "
             "p.id, "
             "p.country, "
+            "mt.mac, "
             "coalesce(ps.status::text, 'unknown') as status, "
             "psi.timestamp, "
             "psi.information['temp'] as temperature, "
@@ -355,6 +358,8 @@ async def get_full_probe_infos(
             "jsonb_path_query_first(psi.information, '$.network[*] ? (@.addr_info[0].label == \"eth0\").stats64.rx.bytes') as rx_bytes, "
             "jsonb_path_query_first(psi.information, '$.network[*] ? (@.addr_info[0].label == \"eth0\").stats64.tx.bytes') as tx_bytes "
             "FROM probe p "
+            "LEFT JOIN mam_tokens mt "
+            "ON p.token_id = mt.id "
             "LEFT JOIN probe_system_information psi "
             "ON p.id = psi.probe_id "
             "LEFT JOIN probe_status ps "
