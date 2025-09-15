@@ -110,7 +110,7 @@ def direct_connection(host, port, sim_provider, tls_ctx):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    parser = argparse.ArgumentParser(conflict_handler="resolve")
+    parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "-b",
@@ -136,9 +136,9 @@ certificate.",
         title="subcommands", required=True, dest="subcommand"
     )
     server_subcmd = "server"
-    server_parser = subparsers.add_parser(server_subcmd)
+    server_parser = subparsers.add_parser(server_subcmd, conflict_handler="resolve")
     direct_subcmd = "direct"
-    direct_parser = subparsers.add_parser(direct_subcmd)
+    direct_parser = subparsers.add_parser(direct_subcmd, conflict_handler="resolve")
 
     server_parser.add_argument(
         "-h",
