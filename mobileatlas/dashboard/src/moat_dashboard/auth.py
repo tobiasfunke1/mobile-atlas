@@ -359,12 +359,11 @@ async def get_user_optional(
         if scope not in token_scopes:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    is_admin = isinstance(token_scopes, list) and "admin" in token_scopes
+    realm_roles = payload.get("realm_access", {}).get("roles", [])
+    is_admin = isinstance(realm_roles, list) and "admin" in realm_roles
 
     if "hosted_probes" in token_scopes:
-        hosted_probes = payload.get("hosted_probes") or payload.get("ext", {}).get(
-            "hosted_probes", []
-        )
+        hosted_probes = payload.get("hosted_probes", [])
     else:
         hosted_probes = []
 
