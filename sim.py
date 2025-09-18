@@ -35,7 +35,10 @@ def init_server(host, port, tls_ctx):
         s.close()
         raise e
 
-    return tls_ctx.wrap_socket(s, server_side=True)
+    if tls_ctx is None:
+        return s
+    else:
+        return tls_ctx.wrap_socket(s, server_side=True)
 
 
 def accept_connection(s):
@@ -103,7 +106,8 @@ def direct_connection(host, port, sim_provider, tls_ctx):
             logging.info(
                 f"requested imsi {requested_imsi} is currently not connected to the system"
             )
-            connection.unwrap()
+            if tls_ctx is not None:
+                connection.unwrap()
             connection.shutdown(socket.SHUT_RDWR)
             connection.close()
 

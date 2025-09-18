@@ -25,6 +25,7 @@ class ModemTunnel(VirtualSim):
     TCP Client to Connect to SIM Server
     Then simulate SIM with SerialModemLink
     """
+
     DEV_SERIAL = "/dev/ttyAMA2"
 
     # using bcm pin numbering
@@ -234,7 +235,8 @@ class ModemTunnel(VirtualSim):
 
     def shutdown(self):
         if self._direct_connection:
-            self._s.unwrap()
+            if self._tls_ctx is not None:
+                self._s.unwrap()
             self._s.shutdown(socket.SHUT_RDWR)
             self._s.close()
         else:
